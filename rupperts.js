@@ -7,16 +7,18 @@
  * 
 */
 
-// canvas constants
-CANVAS_ELEMENT_ID = 'canvas';
-CANVAS_WIDTH = 500; //window.innerWidth * 0.8; 20%?
-CANVAS_HEIGHT = CANVAS_WIDTH;
+import {test_export} from './delaunay.js';
 
-canvas = null; // global starts uninitialized
+// canvas constants
+const CANVAS_ELEMENT_ID = 'canvas';
+const CANVAS_WIDTH = 500; //window.innerWidth * 0.8; 20%?
+const CANVAS_HEIGHT = CANVAS_WIDTH;
+
+let canvas = null; // global starts uninitialized
 
 function initCanvas() {
     // get canvas element
-    canvas = document.getElementById('canvas');
+    canvas = document.getElementById(CANVAS_ELEMENT_ID);
 
     // style canvas
     canvas.style.width = CANVAS_WIDTH + "px";
@@ -31,6 +33,7 @@ function setup() {
     // UI setup
     initCanvas();
     initControls();
-}
+    test_export('imports work!');
+};
 
 window.onload = setup; // ensure page is done loading before doing anything
