@@ -13,6 +13,8 @@
 
             #canvas {
                 background-color: aliceblue;
+                /* width: 500px;
+                height: 500px; */
             }
 
             .center_container {
@@ -29,9 +31,30 @@
             <a href="index.html">Summary Page</a>
         </div>
         <div class="center_container">
-            <canvas id="canvas" width="400px" height="400px" style="border: 1px black;"></canvas>
+            <canvas id="canvas" width="500px" height="500px" style="border: 1px black;"></canvas>
+            <div id="controls">
+                <div id="buttons_setup">
+                    <h3>Step 1: Setup</h3>
+                    <button id="setup_manual_btn">Manual Entry Mode</button>
+                    <label>Number of random points:</label><input type="number" id="setup_random_input" name="random_points" min="10" max="100"><button id="setup_random_btn">Generate</button>
+                    <button id="setup_clear_btn">Clear</button>
+                </div>
+                <div id="buttons_triangulate">
+                    <h3>Step 2: Triangulate</h3>
+                    <button id="triangulate_btn">Triangulate</button>
+                </div>
+                <div id="buttons_run">
+                    <h3>Step 3: Refine</h3>
+                    <button id="run_step_btn">Step</button>
+                    <label>Speed:</label>
+                    <input type="range" min="1" max="100" value="50" class="slider" id="run_speed_input">
+                    <button id="run_play_btn">Play</button>
+                    <button id="run_pause_btn">Pause</button>
+                    <button id="run_reset_btn">Restart</button>
+                </div>
+            </div>
         </div>
         <!--Implementation script-->
-        <script src="rupperts.js" type='module'></script>
+        <script src="visualization.js" type='module'></script>
     </body>
 </html>
