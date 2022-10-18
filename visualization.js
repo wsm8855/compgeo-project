@@ -7,7 +7,7 @@
  * Implements the user interface of the visualization.
 */
 
-import {test_export} from "./delaunay.js";
+import { delaunay_triangulate } from "./delaunay.js";
 import { rupperts_algorithm } from "./rupperts.js";
 
 // debug mode
@@ -54,6 +54,14 @@ class Edge {
     constructor(p0, pf) {
         this.p0 = p0;
         this.pf = pf;
+    }
+}
+
+class Triangle {
+    constructor(p0, p1, p2) {
+        this.v0 = p0;
+        this.v1 = p1;
+        this.v2 = p2;
     }
 }
 
@@ -110,6 +118,12 @@ class Canvas {
         this.ctx.lineTo(e.pf.x, e.pf.y);
         this.ctx.stroke();
     }
+
+    draw_triangle(t) {
+        this.draw_edge(new Edge(t.v0, t.v1));
+        this.draw_edge(new Edge(t.v1, t.v2));
+        this.draw_edge(new Edge(t.v2, t.v0));
+    }
     
     draw_points(points, r) {
         points.forEach(p => {
@@ -120,6 +134,12 @@ class Canvas {
     draw_edges(edges) {
         edges.forEach(e => {
             this.draw_edge(e);
+        });
+    }
+
+    draw_triangles(triangles) {
+        triangles.forEach(t => {
+            this.draw_triangle(t);
         });
     }
 
@@ -139,6 +159,8 @@ class Canvas {
 class UserInterface {
 
     constructor(canvas, vis) {
+        debug("UserInterface.constructor");
+
         this.canvas = canvas;
         this.vis = vis;
 
@@ -151,6 +173,8 @@ class UserInterface {
 
     // CONSTRUCTOR HELPERS
     grab_elements() {
+        debug("UserInterface.grab_elements");
+
         this.setup_manual_btn   = document.getElementById(CTRLS_MANUAL_ENTRY_MODE_BTN_ELEMENT_ID);
         this.setup_random_btn   = document.getElementById(CTRLS_RANDOM_MODE_BTN_ELEMENT_ID);
         this.setup_random_input = document.getElementById(CTRLS_RANDOM_INPUT_ELEMENT_ID);
@@ -166,6 +190,8 @@ class UserInterface {
     }
 
     setup_event_handlers() {
+        debug("UserInterface.setup_event_handlers");
+
         // manual entry mode
         this.setup_manual_btn.onclick = () => {this.manual_entry_mode()};
 
@@ -177,6 +203,9 @@ class UserInterface {
 
         // rng input generation
         this.setup_random_btn.onclick = () => {this.event_populate_random()};
+
+        // triangulate button
+        this.triangulate_btn.onclick = () => {this.event_triangulate()};
     }
 
     // EVENT HANDLERS
@@ -301,7 +330,15 @@ class UserInterface {
         this.canvas.clear();
     }
 
+    event_triangulate() {
+        debug("UserInterface.event_triangulate");
+        this.vis.triangulate();
+        this.canvas.clear();
+        this.draw_state();
+    }
+
     draw_state() {
+        this.canvas.draw_triangles(this.vis.triangles);
         this.canvas.draw_points(this.vis.points, 5);
     }
 }
@@ -324,11 +361,18 @@ class Visualization {
 
         // graph state
         this.points = [];
-        this.edges = [];
+        // this.edges = [];
+        this.triangles = [];
+    }
+
+    reset_state() {
+        this.points = [];
+        this.triangles = [];
     }
 
     populate_random(num_points) {
         // assumes num_points >= 3
+        this.reset_state();
         const new_points = new Set();
         while (new_points.size < num_points) {
             const rng_x = randint(0, this.grid_dims.x);
@@ -340,8 +384,8 @@ class Visualization {
     }
 
     start_manual_entry_mode() {
+        this.reset_state();
         this.in_manual_entry_mode = true;
-        this.points = [];
         this.temp_manual_entry_mode_set = new Set();
         this.populated = false;
     }
@@ -358,6 +402,27 @@ class Visualization {
         this.points = [...this.temp_manual_entry_mode_set];
         this.populated = this.points.length >= 3;
         this.in_manual_entry_mode = false;
+    }
+
+    triangulate() {
+        // assumes populated
+
+        // use delaunay to compute triangles
+        const triangles_raw = delaunay_triangulate(this.points);
+
+        // convert the triangles from raw to our format
+        const new_triangles = [];
+        for (let i=0; i < triangles_raw.length; i += 3) {
+            const new_triangle = new Triangle(
+                this.points[triangles_raw[i]],
+                this.points[triangles_raw[i + 1]],
+                this.points[triangles_raw[i + 2]]
+            );
+            new_triangles.push(new_triangle);
+        }
+
+        // update visualization state
+        this.triangles = new_triangles;
     }
 }
 
@@ -384,8 +449,7 @@ function init() {
 
     app = new Application(canvas, vis, ui);
 
-    debug("init complete")
-    test_export("imports work!");
+    debug("init complete");
 };
 
 // ensure page is done loading before doing anything
