@@ -327,7 +327,9 @@ class UserInterface {
     event_clear() {
         // clear button
         debug("UserInterface.event_clear");
+        this.vis.reset_state();
         this.canvas.clear();
+        this.triangulate_btn.disabled = true;
     }
 
     event_triangulate() {
@@ -366,8 +368,10 @@ class Visualization {
     }
 
     reset_state() {
+        this.state = VisState.Setup;
         this.points = [];
         this.triangles = [];
+        this.populated = false;
     }
 
     populate_random(num_points) {
