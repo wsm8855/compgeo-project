@@ -181,12 +181,19 @@ class UserInterface {
 
     // EVENT HANDLERS
     manual_entry_mode() {
+        // enter manual entry mode, whch dramatially changes behavior of UI
         debug("UserInterface.manual_entry_mode");
-        // very special mode
+
+        // disable UI
         const starting_button_states = this._disable_btns();
+
+        // let vis know mode has started
         this.vis.start_manual_entry_mode();
+
+        // clear canvas
         this.canvas.clear();
 
+        // change manual entry mode button to submit button
         this.setup_manual_btn.textContent = "Submit Entry";
         this.setup_manual_btn.disabled = false;
 
@@ -196,28 +203,45 @@ class UserInterface {
 
         // user clicks on canvas to add point
         this.canvas.element.onclick = (event) => {this.canvas_click_manual_entry_mode(event)};
-
     }
 
     canvas_click_manual_entry_mode(event) {
+        // when in manual entry mode, user clicks canvas
         debug("UserInterface.canvas_click_manual_entry_mode");
+
+        // parse event and create new point
         const x = event.offsetX;
         const y = event.offsetY;
         const new_point = new Point(x, y);
+
+        // submit point to vis
         this.vis.add_point_manual_entry_mode(new_point);
+
+        // redraw canvas
         this.canvas.clear();
         this.draw_state();
     }
 
     exit_manual_entry_mode(starting_button_states) {
+        // user submited entry
         debug("UserInterface.exit_manual_entry_mode");
-        // user submited entry.
+
+        // remove canvas event listener
+        this.canvas.element.onclick = null;
+
+        // tell visualization to exit mode
+        this.vis.exit_manual_entry_mode();
+        
+        // reset manual entry button
         this.setup_manual_btn.disabled = true;
         this.setup_manual_btn.textContent = "Manual Entry Mode";
         this.setup_manual_btn.disabled = false;
-        this._set_btn_status(starting_button_states);
         this.setup_manual_btn.onclick = () => {this.manual_entry_mode()};
-        this.vis.exit_manual_entry_mode(); // check if triangluate butto should be active
+
+        // reset button states
+        this._set_btn_status(starting_button_states);
+
+        // check for necessary changes to button states
         this.triangulate_btn.disabled = this.vis.points.length < 3;
         this.event_rng_input();
     }
@@ -333,6 +357,7 @@ class Visualization {
     exit_manual_entry_mode() {
         this.points = [...this.temp_manual_entry_mode_set];
         this.populated = this.points.length >= 3;
+        this.in_manual_entry_mode = false;
     }
 }
 
