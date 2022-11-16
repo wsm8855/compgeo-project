@@ -1,4 +1,4 @@
-# Developement Server
+# Development Server
 
 Since the implementation makes use of JavaScript modules, it is not possible to run the project simply
 by opening the html documents directly with your browser due to CORS policy restrictions. Instead,
