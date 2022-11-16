@@ -26,6 +26,6 @@ be performed via the command:
 
 Which will produce `devserver.exe`. 
 
-If you do not have installed on you system, you can either:
+If you do not have Go installed on you system, you can either:
  - Install it (do that, go is great :) )
  - Just run it from the included executable (compiled for Windows 10)
