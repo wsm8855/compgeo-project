@@ -410,9 +410,24 @@ class Visualization {
 
     triangulate() {
         // assumes populated
+        var input_points = this.points.map(function(point) {
+            return [point['x'], point['y']];
+        });
 
-        // use delaunay to compute triangles
-        const triangles_raw = delaunay_triangulate(this.points);
+        var xhttp = new XMLHttpRequest();
+        xhttp.open("GET", "/getTriangulation?points=" + input_points, false);
+        xhttp.send();
+        console.log("help")
+        var str_triangles = xhttp.responseText;
+        str_triangles = str_triangles.replace(/[\[\]']+/g,'')
+        str_triangles = str_triangles.replace(/\\n/g, '')
+        str_triangles = str_triangles.replace(/\s/g, '');
+        str_triangles = str_triangles.replace(/['"]+/g, '')
+        const triangles_raw = str_triangles.split(',').map(Number);
+
+        // use delaunay to compute triangle
+
+        // const triangles_raw = delaunay_triangulate(this.points);
 
         // convert the triangles from raw to our format
         const new_triangles = [];
