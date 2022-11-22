@@ -26,6 +26,7 @@ const CTRLS_CLEAR_ELEMENT_ID                 = "setup_clear_btn";
 
 const CTRLS_TRIANGULATE_ELEMENT_ID           = "triangulate_btn";
 
+const CTRLS_REFINE_ELEMENT_ID                = 'refine_btn';
 const CTRLS_STEP_ELEMENT_ID                  = "run_step_btn";
 const CTRLS_SPEED_ELEMENT_ID                 = "run_speed_input";
 const CTRLS_PLAY_ELEMENT_ID                  = "run_play_btn";
@@ -182,6 +183,7 @@ class UserInterface {
 
         this.triangulate_btn    = document.getElementById(CTRLS_TRIANGULATE_ELEMENT_ID);
 
+        this.refine_btn         = document.getElementById(CTRLS_REFINE_ELEMENT_ID);
         this.run_step_btn       = document.getElementById(CTRLS_STEP_ELEMENT_ID);
         this.run_speed_input    = document.getElementById(CTRLS_SPEED_ELEMENT_ID);
         this.run_play_btn       = document.getElementById(CTRLS_PLAY_ELEMENT_ID);
@@ -206,6 +208,8 @@ class UserInterface {
 
         // triangulate button
         this.triangulate_btn.onclick = () => {this.event_triangulate()};
+
+        this.refine_btn.onclick = () => {this.event_show_refinement()};
     }
 
     // EVENT HANDLERS
@@ -335,6 +339,14 @@ class UserInterface {
     event_triangulate() {
         debug("UserInterface.event_triangulate");
         this.vis.triangulate();
+        this.refine_btn.disabled = false;
+        this.canvas.clear();
+        this.draw_state();
+    }
+
+    event_show_refinement() {
+        debug("UserInterface.event_show_refinement");
+        this.vis.show_refinement();
         this.canvas.clear();
         this.draw_state();
     }
@@ -372,6 +384,9 @@ class Visualization {
         this.points = [];
         this.triangles = [];
         this.populated = false;
+
+        this.refinement_points = [];
+        this.refinement_triangles = [];
     }
 
     populate_random(num_points) {
@@ -414,34 +429,88 @@ class Visualization {
             return [point['x'], point['y']];
         });
 
+        console.log(input_points);
+
         var xhttp = new XMLHttpRequest();
         xhttp.open("GET", "/getTriangulation?points=" + input_points, false);
         xhttp.send();
         console.log("help")
-        var str_triangles = xhttp.responseText;
-        str_triangles = str_triangles.replace(/[\[\]']+/g,'')
-        str_triangles = str_triangles.replace(/\\n/g, '')
-        str_triangles = str_triangles.replace(/\s/g, '');
-        str_triangles = str_triangles.replace(/['"]+/g, '')
-        const triangles_raw = str_triangles.split(',').map(Number);
 
-        // use delaunay to compute triangle
+        let str_response = xhttp.responseText; 
+        console.log(str_response);
+        str_response = str_response.replace(/\\n/g, '');
+        str_response = str_response.replace(/\\r/g, '');
+        str_response = str_response.replace(/\s/g, '');
 
-        // const triangles_raw = delaunay_triangulate(this.points);
+        let arr_response = str_response.split('|');
+
+        // TODO for testing until refinement and new points are added
+        if (arr_response.length < 2) {
+            str_response += "|[]|[]";
+            arr_response = str_response.split('|');
+        }
+        
+        function parse_response_str(str_triangles) {
+            str_triangles = str_triangles.replace(/[\[\]']+/g,'');
+            str_triangles = str_triangles.replace(/['"]+/g, '');
+            const triangles_raw = str_triangles.split(',').map(Number);
+            return triangles_raw
+        };
+
+        // delauney triangles
+        let delaunay_raw = parse_response_str(arr_response[0]);
 
         // convert the triangles from raw to our format
-        const new_triangles = [];
-        for (let i=0; i < triangles_raw.length; i += 3) {
+        const new_delauney = [];
+        for (let i=0; i < delaunay_raw.length; i += 3) {
             const new_triangle = new Triangle(
-                this.points[triangles_raw[i]],
-                this.points[triangles_raw[i + 1]],
-                this.points[triangles_raw[i + 2]]
+                this.points[delaunay_raw[i]],
+                this.points[delaunay_raw[i + 1]],
+                this.points[delaunay_raw[i + 2]]
             );
-            new_triangles.push(new_triangle);
+            new_delauney.push(new_triangle);
         }
 
         // update visualization state
-        this.triangles = new_triangles;
+        console.log("new_delauney");
+        console.log(new_delauney);
+        this.triangles = new_delauney;
+
+        // parse new points
+        let new_points_raw = parse_response_str(arr_response[2]);
+
+        const new_points = [];
+        for (let i=0; i < new_points_raw.length; i += 2) {
+            const new_point = new Point(new_points_raw[i], new_points_raw[i+1]);
+            new_points.push(new_point);
+        }
+
+        console.log("new_points");
+        console.log(new_points);
+        this.refinement_points = [...this.points].concat(new_points);
+
+        // parse refinement triangulation
+        let refinement_raw = parse_response_str(arr_response[1]);
+
+        // convert the triangles from raw to our format
+        const new_refinement = [];
+        for (let i=0; i < refinement_raw.length; i += 3) {
+            const new_triangle = new Triangle(
+                this.refinement_points[refinement_raw[i]],
+                this.refinement_points[refinement_raw[i + 1]],
+                this.refinement_points[refinement_raw[i + 2]]
+            );
+            new_refinement.push(new_triangle);
+        }
+
+        console.log("new_refinement");
+        console.log(new_refinement);
+        this.refinement_triangles = new_refinement;
+    }
+
+    show_refinement() {
+        this.points = this.refinement_points;
+        this.triangles = this.refinement_triangles;
     }
 }
 
