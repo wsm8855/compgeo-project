@@ -12,11 +12,10 @@ import (
 func ajaxHandler(w http.ResponseWriter, r *http.Request) {
 	q := r.URL.Query()
 	points := q.Get("points")
-	fmt.Println("REQUEST: " + points)
 
 	out, _ := exec.Command("python3", "../rupperts.py", points).Output()
 	str_out := string(out)
-	fmt.Println("RESPONSE: " + str_out)
+	fmt.Println(str_out)
 
 	// create json response from struct
 	a, err := json.Marshal(str_out)
