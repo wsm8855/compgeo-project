@@ -1,5 +1,6 @@
 import sys
 import numpy as np
+import math
 
 WIDTH = 1000
 HEIGHT = 1000
@@ -17,7 +18,7 @@ class Point:
         c = triangle.vertices[2]
         circle = np.array([[a.x - self.x, a.y - self.y, (a.x - self.x) ** 2 + (a.y - self.y) ** 2],
                            [b.x - self.x, b.y - self.y, (b.x - self.x) ** 2 + (b.y - self.y) ** 2],
-                          [c.x - self.x, c.y - self.y, (c.x - self.x) ** 2 + (c.y - self.y) ** 2]])
+                           [c.x - self.x, c.y - self.y, (c.x - self.x) ** 2 + (c.y - self.y) ** 2]])
 
         if np.linalg.det(circle) > 0:
             return True
@@ -26,6 +27,9 @@ class Point:
 
     def __repr__(self):
         return str(self.name)
+
+    def equals(self, other):
+        return self.x == other.x and self.y == other.y
 
 
 class Segment:
@@ -39,6 +43,24 @@ class Segment:
         if self.start == __o.end and self.end == __o.start:
             return True
         return False
+
+    def length(self):
+        return math.sqrt(math.pow(self.start.x - self.end.x, 2) + math.pow(self.start.y - self.end.y, 2))
+
+    def encroached_upon(self, point):
+        if self.in_segment(point):
+            return False
+        radius = self.length() * .5
+        mid_x = (self.start.x + self.end.x) / 2
+        mid_y = (self.start.y + self.end.y) / 2
+        diff_from_point = math.sqrt(math.pow(point.x - mid_x, 2) + math.pow(point.y - mid_y, 2))
+        return diff_from_point < radius
+
+    def in_segment(self, point):
+        return point == self.start or point == self.end
+
+    def get_midpoint(self):
+        return [(self.start.x + self.end.x) / 2, (self.start.y + self.end.y) / 2]
 
 
 class Triangle:
@@ -96,7 +118,6 @@ class DelaunayTriangulation:
             self.triangulation.append(new_triangle)
 
     def remove_super(self):
-        # Removing the super triangle using Lamba function
         onSuper = lambda triangle: triangle.has_vertex(self.SuperPointA) or triangle.has_vertex(
             self.SuperPointB) or triangle.has_vertex(self.SuperPointC)
 
@@ -105,8 +126,7 @@ class DelaunayTriangulation:
                 self.triangulation.remove(triangle_new)
 
     def __repr__(self):
-        return str(self.triangulation)
-
+        return "[" + str(self.triangulation) + ",[]]"
 
 
 if __name__ == "__main__":
@@ -118,7 +138,7 @@ if __name__ == "__main__":
     index = 0
     name = 0
     while index < len(points_raw):
-        point = Point(points_raw[index], points_raw[index+1], name)
+        point = Point(points_raw[index], points_raw[index + 1], name)
         delaunay.add_point(point)
         points.append(point)
         index += 2
@@ -127,3 +147,5 @@ if __name__ == "__main__":
     delaunay.remove_super()
 
     print(delaunay)
+
+    # print([[[1, 0, 3], [2, 1, 3], [4, 1, 0]], [[244, 125], [156, 300]]])
