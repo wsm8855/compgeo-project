@@ -20,6 +20,28 @@
             .center_container {
                 text-align: center;
             }
+
+            .vis_section {
+                float: right;
+                max-width: 45%;
+            }
+
+            .code_bold {
+                font-weight: bold;
+                font-size: large;
+            }
+
+            .code_section {
+                float: left;
+                text-align: left;
+                max-width: 45%;
+                font-family: 'Courier New', Courier, monospace;
+                background-color: gainsboro;
+            }
+
+            .hide {
+                display: none;
+            }
         </style>
     </head>
     <body>
@@ -31,6 +53,28 @@
             <a href="index.html">Summary Page</a>
         </div>
         <div class="center_container">
+            <div class="code_section">
+                <span id="line_1" >function Ruppert(points, segments, threshold){</span><br>
+                <span id="line_2" >T := DelaunayTriangulation(points)</span><br>
+                <span id="line_3" >Q := the set of encroached segments and poor quality triangles</span><br>
+                <br>
+                <span id="line_4" >while Q is not empty:&emsp;&emsp;// The main loop</span><br>
+                <span id="line_5" >&emsp;if Q contains a segment s:</span><br>
+                <span id="line_6" >&emsp;&emsp;insert the midpoint of s into T</span><br>
+                <span id="line_7" >&emsp;else Q contains poor quality triangle t:</span><br>
+                <span id="line_8" >&emsp;&emsp;if the circumcenter of t encroaches a segment s:</span><br>
+                <span id="line_9" >&emsp;&emsp;&emsp;add s to Q;</span><br>
+                <span id="line_10">&emsp;&emsp;else:<br>
+                <span id="line_11">&emsp;&emsp;&emsp;insert the circumcenter of t into T</span><br>
+                <span id="line_12">&emsp;&emsp;end if</span><br>
+                <span id="line_13">&emsp;end if</span><br>
+                <span id="line_14">&emsp;update Q</span><br>
+                <span id="line_15">end while</span><br>
+                <br>
+                <span id="line_16">return T</span><br>
+                <span id="line_17">}//end Ruppert.</span><br>
+            </div>
+            <div class="vis_section">
             <canvas id="canvas" width="500px" height="500px" class="border"></canvas>
             <div id="controls">
                 <div id="buttons_setup">
@@ -47,12 +91,13 @@
                     <h3>Step 3: Refine</h3>
                     <button id="refine_btn" disabled="True">Show Refinement</button>
                     <button id="run_step_btn" disabled="True">Step</button>
-                    <label>Speed:</label>
-                    <input type="range" min="1" max="10" value="1" class="slider" id="run_speed_input">
-                    <button id="run_play_btn" disabled="True">Play</button>
-                    <button id="run_pause_btn" disabled="True">Pause</button>
-                    <button id="run_reset_btn" disabled="True">Restart</button>
+                    <label class="hide">Speed:</label>
+                    <input type="range" min="1" max="10" value="1" class="slider hide" id="run_speed_input">
+                    <button id="run_play_btn" disabled="True" class="hide">Play</button>
+                    <button id="run_pause_btn" disabled="True" class="hide">Pause</button>
+                    <button id="run_reset_btn" disabled="True" class="hide">Restart</button>
                 </div>
+            </div>
             </div>
         </div>
         <!--Implementation script-->

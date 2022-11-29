@@ -19,6 +19,7 @@ function debug(msg) {
 }
 
 // UI Constants
+// controls
 const CTRLS_MANUAL_ENTRY_MODE_BTN_ELEMENT_ID = "setup_manual_btn";
 const CTRLS_RANDOM_MODE_BTN_ELEMENT_ID       = "setup_random_btn";
 const CTRLS_RANDOM_INPUT_ELEMENT_ID          = "setup_random_input";
@@ -31,6 +32,14 @@ const CTRLS_SPEED_ELEMENT_ID                 = "run_speed_input";
 const CTRLS_PLAY_ELEMENT_ID                  = "run_play_btn";
 const CTRLS_PAUSE_ELEMENT_ID                 = "run_pause_btn";
 const CTRLS_RESTART_ELEMENT_ID               = "run_reset_btn";
+
+// code display
+const CODE_LINE_ID_PREFIX                    = "line_";
+const STYLE_CLASS_CODE_BOLD                  = "code_bold";
+
+// code line meanings
+const CODE_NUM_LINES                         = 17; // expect elements with ids line_1 ... line_17 exist.
+const CODE_TRIANGULATE_LINE                  = 2;
 
 // canvas constants
 const CANVAS_ELEMENT_ID = "canvas";
@@ -187,6 +196,13 @@ class UserInterface {
         this.run_play_btn       = document.getElementById(CTRLS_PLAY_ELEMENT_ID);
         this.run_pause_btn      = document.getElementById(CTRLS_PAUSE_ELEMENT_ID);
         this.run_reset_btn      = document.getElementById(CTRLS_RESTART_ELEMENT_ID);
+
+        // grab code lines
+        this.code_lines = [null]; // first element "line 0" is empty to allow for semantic indexing
+        for (let line_num = 1; line_num < CODE_NUM_LINES + 1; line_num++) {
+            let line_span_element = document.getElementById(CODE_LINE_ID_PREFIX + line_num);
+            this.code_lines.push(line_span_element);
+        }
     }
 
     setup_event_handlers() {
@@ -208,6 +224,13 @@ class UserInterface {
         this.triangulate_btn.onclick = () => {this.event_triangulate()};
     }
 
+    clear_code() {
+        // clean code area
+        for (let line_num = 1; line_num < CODE_NUM_LINES + 1; line_num++) {
+            this.code_lines[line_num].classList.remove(STYLE_CLASS_CODE_BOLD);
+        }
+    }
+
     // EVENT HANDLERS
     manual_entry_mode() {
         // enter manual entry mode, whch dramatially changes behavior of UI
@@ -221,6 +244,9 @@ class UserInterface {
 
         // clear canvas
         this.canvas.clear();
+
+        // clean code area
+        this.clear_code();
 
         // change manual entry mode button to submit button
         this.setup_manual_btn.textContent = "Submit Entry";
@@ -303,6 +329,7 @@ class UserInterface {
     event_rng_input() {
         // validate input is an integer >= 3. if not, disable the random generation button.
         debug("UserInterface.event_rng_input");
+
         if (this.vis.in_manual_entry_mode) {
             return;
         }
@@ -320,6 +347,7 @@ class UserInterface {
         this.vis.populate_random(num_points);
         this.vis.populated = true;
         this.triangulate_btn.disabled = this.vis.points.length < 3;
+        this.clear_code();
         this.canvas.clear();
         this.draw_state();
     }
@@ -328,6 +356,7 @@ class UserInterface {
         // clear button
         debug("UserInterface.event_clear");
         this.vis.reset_state();
+        this.clear_code();
         this.canvas.clear();
         this.triangulate_btn.disabled = true;
     }
@@ -335,6 +364,7 @@ class UserInterface {
     event_triangulate() {
         debug("UserInterface.event_triangulate");
         this.vis.triangulate();
+        this.code_lines[CODE_TRIANGULATE_LINE].classList.add(STYLE_CLASS_CODE_BOLD);
         this.canvas.clear();
         this.draw_state();
     }
