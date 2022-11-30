@@ -1,6 +1,7 @@
 import sys
 import numpy as np
 import math
+import json
 
 WIDTH = 1000
 HEIGHT = 1000
@@ -128,9 +129,24 @@ class DelaunayTriangulation:
     def __repr__(self):
         return "[" + str(self.triangulation) + ",[]]"
 
+class TriangulationEncoder(json.JSONEncoder):
+    def default(self, obj):
+        if isinstance(obj, Point):
+            return obj.name
+        elif isinstance(obj, Triangle):
+            return [p.name for p in obj.vertices]
+        return json.JSONEncoder.default(self, obj)
+
 
 if __name__ == "__main__":
     points_str = sys.argv[1]
+    refine = int(sys.argv[2])
+    if refine:
+        # triangulate with refinement
+        angle = float(sys.argv[3])
+        # TODO call for refinement with angle param
+
+    # TODO following should be in else clause, but outside for compatibility for now
     points_raw = [int(i) for i in points_str.split(",")]
 
     points = [None] * (int(len(points_raw) / 2))
@@ -146,6 +162,6 @@ if __name__ == "__main__":
 
     delaunay.remove_super()
 
-    print(delaunay)
+    print(json.dumps({'triangles': [tri for tri in delaunay.triangulation], 'points': []}, cls=TriangulationEncoder))
 
     # print([[[1, 0, 3], [2, 1, 3], [4, 1, 0]], [[244, 125], [156, 300]]])

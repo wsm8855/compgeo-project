@@ -18,7 +18,11 @@ function debug(msg) {
     }
 }
 
-// UI Constants
+// CONSTANTS
+// backend
+const BACKEND_ADDRESS = '' // will need to connect to backend in production
+
+// UI
 const CTRLS_MANUAL_ENTRY_MODE_BTN_ELEMENT_ID = "setup_manual_btn";
 const CTRLS_RANDOM_MODE_BTN_ELEMENT_ID       = "setup_random_btn";
 const CTRLS_RANDOM_INPUT_ELEMENT_ID          = "setup_random_input";
@@ -32,7 +36,7 @@ const CTRLS_PLAY_ELEMENT_ID                  = "run_play_btn";
 const CTRLS_PAUSE_ELEMENT_ID                 = "run_pause_btn";
 const CTRLS_RESTART_ELEMENT_ID               = "run_reset_btn";
 
-// canvas constants
+// canvas
 const CANVAS_ELEMENT_ID = "canvas";
 const CANVAS_WIDTH = 500; //window.innerWidth * 0.8; 20%?
 const CANVAS_HEIGHT = CANVAS_WIDTH;
@@ -413,17 +417,48 @@ class Visualization {
         var input_points = this.points.map(function(point) {
             return [point['x'], point['y']];
         });
+        
+        // request delaunay triangulation
+        const xhttp = new XMLHttpRequest();
+        xhttp.open("GET", BACKEND_ADDRESS + "/getTriangulation?points=" + input_points + "&refine=0", false);
+        xhttp.send();
+        const str_response = xhttp.responseText;
+        const parsed = JSON.parse(JSON.parse(str_response));
+        console.log(parsed);
+        const triangles_to_add = parsed.triangles;
+
+        // convert the triangles from raw to our format
+        const new_triangles = [];
+        for (let i=0; i < triangles_to_add.length; i += 1) {
+            const new_triangle = new Triangle(
+                this.points[triangles_to_add[i][0]],
+                this.points[triangles_to_add[i][1]],
+                this.points[triangles_to_add[i][2]]
+            );
+            new_triangles.push(new_triangle);
+        }
+
+        // update visualization state
+        this.triangles = new_triangles;
+    }
+
+    refine(angle) {
+        // assumes populated
+        var input_points = this.points.map(function(point) {
+            return [point['x'], point['y']];
+        });
 
         const xhttp = new XMLHttpRequest();
-        xhttp.open("GET", "/getTriangulation?points=" + input_points, false);
+        xhttp.open("GET", BACKEND_ADDRESS + "/getTriangulation?points=" + input_points + "refine=1&angle=" + angle, false);
         xhttp.send();
-        const str_triangles = xhttp.responseText;
-        const parsed = JSON.parse(JSON.parse(str_triangles))
-        const triangles_to_add = parsed[0]
-        const points_to_add = parsed[1]
+        const str_response = xhttp.responseText;
+        const parsed = JSON.parse(JSON.parse(str_response));
+        console.log(parsed);
+        const triangles_to_add = parsed.triangles;
+        const points_to_add = parsed.points;
 
-        console.log(triangles_to_add)
-        console.log(points_to_add)
+        console.log(triangles_to_add);
+        console.log(points_to_add);
 
         // use delaunay to compute triangle
 
