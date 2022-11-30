@@ -26,6 +26,8 @@ func ajaxHandler(w http.ResponseWriter, r *http.Request) {
 		angle = q.Get("angle")
 	}
 
+	debug(refine + " " + angle + " " + points) // reverse order that they're passed into the program to accomidate large sets of points
+
 	out, _ := exec.Command("python3", "../rupperts.py", points, refine, angle).Output()
 	str_out := string(out)
 	fmt.Println(str_out)
