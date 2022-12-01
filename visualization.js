@@ -438,6 +438,7 @@ class Visualization {
             new_points.add(new_point);
         }
         this.points =  [...new_points];
+        this.points_copy = JSON.parse(JSON.stringify(this.points));
     }
 
     start_manual_entry_mode() {
@@ -463,7 +464,8 @@ class Visualization {
 
     triangulate() {
         // assumes populated
-        var input_points = this.points.map(function(point) {
+        this.points = JSON.parse(JSON.stringify(this.points_copy))
+        var input_points = this.points_copy.map(function(point) {
             return [point['x'], point['y']];
         });
         
@@ -473,9 +475,7 @@ class Visualization {
         xhttp.send();
         const str_response = xhttp.responseText;
         const parsed = JSON.parse(JSON.parse(str_response));
-        console.log(parsed);
         const triangles_to_add = parsed[0];
-        console.log(parsed[0])
 
         // convert the triangles from raw to our format
         const new_triangles = [];
@@ -495,25 +495,21 @@ class Visualization {
 
     refine(angle) {
         // assumes populated
-        var input_points = this.points.map(function(point) {
+        this.points = JSON.parse(JSON.stringify(this.points_copy))
+        var input_points = this.points_copy.map(function(point) {
             return [point['x'], point['y']];
         });
+        console.log(input_points)
 
         const xhttp = new XMLHttpRequest();
         xhttp.open("GET", BACKEND_ADDRESS + "/getTriangulation?points=" + input_points + "&refine=1&angle=" + angle, false);
         xhttp.send();
         const str_response = xhttp.responseText;
         const parsed = JSON.parse(JSON.parse(str_response));
-        console.log(parsed);
         const triangles_to_add = parsed[0];
         const points_to_add = parsed[1];
 
-        console.log(triangles_to_add);
-        console.log(points_to_add);
-
         // use delaunay to compute triangle
-
-        // const triangles_raw = delaunay_triangulate(this.points);
 
         const new_points = this.points;
         for (let i=0; i < points_to_add.length; i += 1) {
