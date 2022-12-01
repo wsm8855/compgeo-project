@@ -253,7 +253,8 @@ if __name__ == "__main__":
     if refine:
         # triangulate with refinement
         angle = float(sys.argv[3])
-        delaunay.ruppert(angle, 50)
+        length = float(sys.argv[4])
+        delaunay.ruppert(angle, length)
         delaunay.remove_super()
         print(delaunay)
     else:

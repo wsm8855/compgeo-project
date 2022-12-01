@@ -22,13 +22,15 @@ func ajaxHandler(w http.ResponseWriter, r *http.Request) {
 	points := q.Get("points")
 	refine := q.Get("refine")
 	angle := ""
+	length := ""
 	if refine == "1" {
 		angle = q.Get("angle")
+		length = q.Get("length")
 	}
 
-	debug(refine + " " + angle + " " + points) // reverse order that they're passed into the program to accomidate large sets of points
+	debug(refine + " " + angle + " " + length + " " + points) // reverse order that they're passed into the program to accomidate large sets of points
 
-	out, _ := exec.Command("python3", "../rupperts.py", points, refine, angle).Output()
+	out, _ := exec.Command("python3", "../rupperts.py", points, refine, angle, length).Output()
 	str_out := string(out)
 	fmt.Println(str_out)
 

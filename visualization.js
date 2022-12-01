@@ -25,6 +25,7 @@ const BACKEND_ADDRESS = '' // will need to connect to backend in production
 // input validation
 const INPUT_MIN_POINTS = 3
 const INPUT_MIN_ANGLE = 21.0
+const INPUT_MIN_LENGTH = 1
 
 // UI
 const CTRLS_MANUAL_ENTRY_MODE_BTN_ELEMENT_ID = "setup_manual_btn";
@@ -35,6 +36,7 @@ const CTRLS_CLEAR_ELEMENT_ID                 = "setup_clear_btn";
 const CTRLS_TRIANGULATE_ELEMENT_ID           = "triangulate_btn";
 
 const CTRLS_REFINE_ANGLE_INPUT               = "refine_angle_input";
+const CTRLS_REFINE_LENGTH_INPUT              = "refine_length_input";
 const CTRLS_REFINE_BTN_ELEMENT               = "refine_btn";
 const CTRLS_STEP_ELEMENT_ID                  = "run_step_btn";
 const CTRLS_SPEED_ELEMENT_ID                 = "run_speed_input";
@@ -193,6 +195,7 @@ class UserInterface {
         this.triangulate_btn        = document.getElementById(CTRLS_TRIANGULATE_ELEMENT_ID);
 
         this.run_refine_angle_input = document.getElementById(CTRLS_REFINE_ANGLE_INPUT);
+        this.run_refine_length_input  = document.getElementById(CTRLS_REFINE_LENGTH_INPUT);
         this.run_refine_btn         = document.getElementById(CTRLS_REFINE_BTN_ELEMENT);
         this.run_step_btn           = document.getElementById(CTRLS_STEP_ELEMENT_ID);
         this.run_speed_input        = document.getElementById(CTRLS_SPEED_ELEMENT_ID);
@@ -220,6 +223,8 @@ class UserInterface {
         this.triangulate_btn.onclick = () => {this.event_triangulate()};
 
         this.run_refine_angle_input.oninput = () => {this.event_angle_input()};
+
+        this.run_refine_length_input.oninput = () => {this.event_length_input()};
 
         this.run_refine_btn.onclick = () => {this.event_refine()};
     }
@@ -355,7 +360,7 @@ class UserInterface {
         this.vis.triangulate();
         this.canvas.clear();
         this.draw_state();
-        if (this._angle_input_valid()) {
+        if (this._angle_input_valid() && this._length_input_valid()) {
             this.run_refine_btn.disabled = false;
         }
     }
@@ -381,10 +386,36 @@ class UserInterface {
         }
     }
 
+    _length_input_valid() {
+        debug("UserInterface._length_input_valid");
+        if (this.vis.in_manual_entry_mode) {
+            return;
+        }
+        const input_val = this.run_refine_length_input.value;
+        if (input_val >= INPUT_MIN_LENGTH) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    event_length_input() {
+        debug("UserInterface.event_length_input");
+        if (this.vis.in_manual_entry_mode) {
+            return;
+        }
+        if (this._length_input_valid() && this.vis.triangulation_complete) {
+            this.run_refine_btn.disabled = false;
+        } else {
+            this.run_refine_btn.disabled = true;
+        }
+    }
+
     event_refine() {
         debug("UserInterface.event_refine");
         const angle_val = this.run_refine_angle_input.value;
-        this.vis.refine(angle_val);
+        const length_val = this.run_refine_length_input.value;
+        this.vis.refine(angle_val, length_val);
         this.canvas.clear();
         this.draw_state();
         this.run_step_btn.disabled = false;
@@ -402,29 +433,36 @@ class UserInterface {
  */
 class Visualization {
     constructor(grid_dims) {
-        // state variables
-        this.state = VisState.Setup;
-        this.in_manual_entry_mode = false;
-        this.populated = false;
-        this.triangulation_complete = false;
-
-        this.temp_manual_entry_mode_set = null;
-
-        // grid dimensions (max x and y coords)
+        // properties
         this.grid_dims = grid_dims;
 
-        // graph state
-        this.points = [];
-        // this.edges = [];
-        this.triangles = [];
+        // set initial state
+        this.reset_state();
+
+        // manual entry mode state
+        this.in_manual_entry_mode = false;
+        this.temp_manual_entry_mode_set = null;
     }
 
     reset_state() {
+        // state enum
         this.state = VisState.Setup;
+
+        // display state
         this.points = [];
         this.triangles = [];
+
+        // saved hidden state
+        this.input_points = [];
+        this.delaunay_points = [];
+        this.delaunay_triangles = [];
+        this.refined_points = [];
+        this.refined_triangles = [];
+
+        // setup state
         this.populated = false;
         this.triangulation_complete = false;
+        this.refinement_complete = false;
     }
 
     populate_random(num_points) {
@@ -438,7 +476,6 @@ class Visualization {
             new_points.add(new_point);
         }
         this.points =  [...new_points];
-        this.points_copy = JSON.parse(JSON.stringify(this.points));
     }
 
     start_manual_entry_mode() {
@@ -464,8 +501,10 @@ class Visualization {
 
     triangulate() {
         // assumes populated
-        this.points = JSON.parse(JSON.stringify(this.points_copy))
-        var input_points = this.points_copy.map(function(point) {
+        if (!this.triangulation_complete) {
+            this.input_points = [...this.points]; // save original points if re-triangulation is desired
+        }
+        var input_points = this.input_points.map(function(point) {
             return [point['x'], point['y']];
         });
         
@@ -481,28 +520,32 @@ class Visualization {
         const new_triangles = [];
         for (let i=0; i < triangles_to_add.length; i += 1) {
             const new_triangle = new Triangle(
-                this.points[triangles_to_add[i][0]],
-                this.points[triangles_to_add[i][1]],
-                this.points[triangles_to_add[i][2]]
+                this.input_points[triangles_to_add[i][0]],
+                this.input_points[triangles_to_add[i][1]],
+                this.input_points[triangles_to_add[i][2]]
             );
             new_triangles.push(new_triangle);
         }
 
+        // update saved state
+        this.delaunay_points = [...this.input_points];
+        this.delaunay_triangles = new_triangles;
+
         // update visualization state
-        this.triangles = new_triangles;
+        this.points = [...this.delaunay_points];
+        this.triangles = [...this.delaunay_triangles];
         this.triangulation_complete = true;
     }
 
-    refine(angle) {
+    refine(angle, length) {
         // assumes populated
-        this.points = JSON.parse(JSON.stringify(this.points_copy))
-        var input_points = this.points_copy.map(function(point) {
+        const input_points = this.delaunay_points.map(function(point) {
             return [point['x'], point['y']];
         });
         console.log(input_points)
 
         const xhttp = new XMLHttpRequest();
-        xhttp.open("GET", BACKEND_ADDRESS + "/getTriangulation?points=" + input_points + "&refine=1&angle=" + angle, false);
+        xhttp.open("GET", BACKEND_ADDRESS + "/getTriangulation?points=" + input_points + "&refine=1&angle=" + angle + "&length=" + length, false);
         xhttp.send();
         const str_response = xhttp.responseText;
         const parsed = JSON.parse(JSON.parse(str_response));
@@ -511,26 +554,31 @@ class Visualization {
 
         // use delaunay to compute triangle
 
-        const new_points = this.points;
+        const new_points = [...this.delaunay_points];
         for (let i=0; i < points_to_add.length; i += 1) {
             const new_point = new Point(points_to_add[i][0], points_to_add[i][1]);
             new_points.push(new_point);
         }
-        this.points =  [...new_points];
 
         // convert the triangles from raw to our format
         const new_triangles = [];
         for (let i=0; i < triangles_to_add.length; i += 1) {
             const new_triangle = new Triangle(
-                this.points[triangles_to_add[i][0]],
-                this.points[triangles_to_add[i][1]],
-                this.points[triangles_to_add[i][2]]
+                new_points[triangles_to_add[i][0]],
+                new_points[triangles_to_add[i][1]],
+                new_points[triangles_to_add[i][2]]
             );
             new_triangles.push(new_triangle);
         }
 
+        // update saved state
+        this.refined_points = new_points;
+        this.refined_triangles = new_triangles;
+
         // update visualization state
-        this.triangles = new_triangles;
+        this.points = [...this.refined_points];
+        this.triangles = [...this.refined_triangles];
+        this.refinement_complete = true;
     }
 }
 
