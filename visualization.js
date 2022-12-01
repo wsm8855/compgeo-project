@@ -474,7 +474,8 @@ class Visualization {
         const str_response = xhttp.responseText;
         const parsed = JSON.parse(JSON.parse(str_response));
         console.log(parsed);
-        const triangles_to_add = parsed.triangles;
+        const triangles_to_add = parsed[0];
+        console.log(parsed[0])
 
         // convert the triangles from raw to our format
         const new_triangles = [];
@@ -504,8 +505,8 @@ class Visualization {
         const str_response = xhttp.responseText;
         const parsed = JSON.parse(JSON.parse(str_response));
         console.log(parsed);
-        const triangles_to_add = parsed.triangles;
-        const points_to_add = parsed.points;
+        const triangles_to_add = parsed[0];
+        const points_to_add = parsed[1];
 
         console.log(triangles_to_add);
         console.log(points_to_add);
