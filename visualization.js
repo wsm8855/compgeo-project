@@ -21,7 +21,7 @@ function debug(msg) {
 // CONSTANTS
 // backend
 const TEST_PROD_BACKEND= 'http://localhost:9091' // assuming you run prod on port 9091
-const PROD_BACKEND = 'http://67.205.189.195' // my digital ocean droplet
+const PROD_BACKEND = 'http://67.205.189.195:9091' // my digital ocean droplet
 const DEV_BACKEND = ''
 
 const BACKEND_ADDRESS = PROD_BACKEND // will need to connect to backend in production
