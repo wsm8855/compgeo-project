@@ -1,10 +1,23 @@
+""" 
+Ruppert's Algorithm Pedagogical Aid
+Abigail Buckta and Wiley Matthews
+CSCI-716 Computational Geometry Project
+Fall 2022
+
+Implements Ruppert's algorithm and performs bookkeeping for visualization.
+"""
+
+# native
 import sys
-import numpy as np
 import math
 import json
 
+# 3rd party
+import numpy as np
+
 WIDTH = 1000
 HEIGHT = 1000
+POINT_PRESISION = 4
 
 
 class Point:
@@ -32,8 +45,16 @@ class Point:
     def equals(self, other):
         return self.x == other.x and self.y == other.y
 
-    def str_loc(self):
-        return "[" + str(self.x) + ", "  + str(self.y) +"]"
+    def str_loc(self, precision=None):
+        x = self.x
+        y = self.y
+        if precision is not None:
+            x = round(x, precision)
+            y = round(y, precision)
+        return "[" + str(x) + ", "  + str(y) +"]"
+    
+    def json_friendly(self):
+        return self.name
 
 
 class Segment:
@@ -65,6 +86,9 @@ class Segment:
 
     def get_midpoint(self):
         return [(self.start.x + self.end.x) / 2, (self.start.y + self.end.y) / 2]
+    
+    def json_friendly(self):
+        return [self.start.name, self.end.name]
 
 
 class Triangle:
@@ -118,6 +142,9 @@ class Triangle:
 
     def __repr__(self):
         return str(self.vertices)
+    
+    def json_friendly(self):
+        return [v.json_friendly() for v in self.vertices]
 
 
 class DelaunayTriangulation:
@@ -135,6 +162,8 @@ class DelaunayTriangulation:
         superTriangle = Triangle(self.SuperPointA, self.SuperPointB, self.SuperPointC)
 
         self.triangulation.append(superTriangle)
+
+        self.bookkeeper = Bookkeeper() # bookkeeping for visualiztion
 
     def add_point(self, point, new = False):
         self.next_point_name += 1
@@ -185,12 +214,14 @@ class DelaunayTriangulation:
             if (not triangle.has_vertex(self.SuperPointA) and not triangle.has_vertex(
                     self.SuperPointB) and not triangle.has_vertex(self.SuperPointC)):
                 for segment in triangle.edges:
+                    # self.bookkeeper.check_segment_encroaching(segment) # happens thousands of times
                     if segment.length() > self.threshold_length:
                         for point in self.all_points:
                             if(segment.encroached_upon(point)):
                                 x, y = segment.get_midpoint()
                                 p = Point(x, y, self.next_point_name)
                                 delaunay.add_point(p, new=True)
+                                self.bookkeeper.encroached_upon(segment, point, p)
                                 return True
         return False
 
@@ -208,15 +239,17 @@ class DelaunayTriangulation:
                         self.SuperPointB) and not triangle.has_vertex(self.SuperPointC)):
                     for segment in triangle.edges:
                         if not segment.length() < self.threshold_length:
-                            if(segment.encroached_upon(point)):
-                                segments.append(segment)
+                            if(segment.encroached_upon(p)):
+                                segments.append((segment, p))
             if len(segments)>0:
-                for segment in segments:
+                for segment, point in segments:
                     x, y = segment.get_midpoint()
                     p = Point(x, y, self.next_point_name)
                     delaunay.add_point(p, new=True)
+                    # self.bookkeeper.encroached_upon(segment, point, p)
             else:
                 delaunay.add_point(p, new=True)
+                self.bookkeeper.fix_skinny(skinny, p)
 
 
     def ruppert(self, threshold_angle, threshold_length):
@@ -229,10 +262,43 @@ class DelaunayTriangulation:
         new_points_str = "["
         if(len(self.new_points)>0):
             for point in self.new_points:
-                new_points_str+= point.str_loc() +", "
+                new_points_str+= point.str_loc(precision=POINT_PRESISION) +", "
             new_points_str = new_points_str[:len(new_points_str)-2]
         new_points_str +="]"
         return "[" + str(self.triangulation) + ", " +new_points_str+ "]"
+    
+    def to_json(self, **json_kwargs):
+        response_json = json.dumps({
+            "triangulation": repr(self),
+            "events": self.bookkeeper.events
+        }, **json_kwargs)
+        return response_json
+
+class Bookkeeper:
+
+    def __init__(self):
+        self.events = []
+
+    def check_segment_encroaching(self, segment):
+        self.events.append({
+            "type": "check_segment_encroaching",
+            "segment": segment.json_friendly()
+        })
+
+    def encroached_upon(self, offending_segment, offending_point, new_point):
+        self.events.append({
+            "type": "encroached_upon",
+            "segment": offending_segment.json_friendly(),
+            "offending_point": offending_point.json_friendly(),
+            "new_point": new_point.json_friendly()
+        })
+
+    def fix_skinny(self, skinny_triangle, circumcenter_point):
+        self.events.append({
+            "type": "fix_skinny",
+            "triangle": skinny_triangle.json_friendly(),
+            "point": circumcenter_point.json_friendly()
+        })
 
 if __name__ == "__main__":
     points_str = sys.argv[1]
@@ -255,9 +321,7 @@ if __name__ == "__main__":
         angle = float(sys.argv[3])
         length = float(sys.argv[4])
         delaunay.ruppert(angle, length)
-        delaunay.remove_super()
-        print(delaunay)
-    else:
-        delaunay.remove_super()
-        print(delaunay)
+    
+    delaunay.remove_super()
+    print(delaunay.to_json(separators=(',', ':')))
 

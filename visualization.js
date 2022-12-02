@@ -513,8 +513,9 @@ class Visualization {
         xhttp.open("GET", BACKEND_ADDRESS + "/getTriangulation?points=" + input_points + "&refine=0", false);
         xhttp.send();
         const str_response = xhttp.responseText;
-        const parsed = JSON.parse(JSON.parse(str_response));
-        const triangles_to_add = parsed[0];
+        const parsed_response = JSON.parse(JSON.parse(str_response));
+        const parsed_triangulation = JSON.parse(parsed_response["triangulation"])
+        const triangles_to_add = parsed_triangulation[0];
 
         // convert the triangles from raw to our format
         const new_triangles = [];
@@ -542,15 +543,16 @@ class Visualization {
         const input_points = this.delaunay_points.map(function(point) {
             return [point['x'], point['y']];
         });
-        console.log(input_points)
 
         const xhttp = new XMLHttpRequest();
         xhttp.open("GET", BACKEND_ADDRESS + "/getTriangulation?points=" + input_points + "&refine=1&angle=" + angle + "&length=" + length, false);
         xhttp.send();
         const str_response = xhttp.responseText;
-        const parsed = JSON.parse(JSON.parse(str_response));
-        const triangles_to_add = parsed[0];
-        const points_to_add = parsed[1];
+        const parsed_response = JSON.parse(JSON.parse(str_response));
+        const parsed_triangulation = JSON.parse(parsed_response["triangulation"])
+        const triangles_to_add = parsed_triangulation[0];
+        const points_to_add = parsed_triangulation[1];
+        const events =  parsed_response["events"];
 
         // use delaunay to compute triangle
 
