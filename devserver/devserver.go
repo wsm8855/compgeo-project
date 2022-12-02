@@ -9,6 +9,8 @@ import (
 	"os/exec"
 )
 
+var DEV_MODE = true
+
 var DEBUG bool = true
 
 func debug(to_print ...interface{}) {
@@ -17,7 +19,15 @@ func debug(to_print ...interface{}) {
 	}
 }
 
+func enableCors(w *http.ResponseWriter) {
+	(*w).Header().Set("Access-Control-Allow-Origin", "*")
+}
+
 func ajaxHandler(w http.ResponseWriter, r *http.Request) {
+	if !DEV_MODE {
+		enableCors(&w)
+	}
+
 	q := r.URL.Query()
 	points := q.Get("points")
 	refine := q.Get("refine")
@@ -55,15 +65,15 @@ func main() {
 	port := os.Args[1]
 	dir := os.Args[2]
 
-	dev_mode := dir != "prod"
+	DEV_MODE = dir != "prod"
 
-	if dev_mode {
+	if DEV_MODE {
 		// only serve files if not in production mode
 		http.Handle("/", http.FileServer(http.Dir(dir)))
 	}
 	http.HandleFunc("/getTriangulation", ajaxHandler)
 
-	if dev_mode {
+	if DEV_MODE {
 		fmt.Println("DEV MODE: Serving files on port " + port + " from directory " + dir)
 	} else {
 		fmt.Println("PROD MODE: Listening for getTriangulation/ requests on port " + port)
