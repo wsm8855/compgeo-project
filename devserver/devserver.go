@@ -86,5 +86,7 @@ func main() {
 	} else {
 		fmt.Println("PROD MODE: Listening for getTriangulation/ requests on port " + port)
 	}
+	fmt.Println("PYTHON_PATH=\"" + PYTHON_PATH + "\"")
+	fmt.Println("SCRIPT_PATH=\"" + SCRIPT_PATH + "\"")
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }
