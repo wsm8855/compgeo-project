@@ -11,6 +11,7 @@ import (
 
 var DEV_MODE = true
 var SCRIPT_PATH = "../rupperts.py"
+var PYTHON_PATH = "python3"
 
 var DEBUG bool = true
 
@@ -41,7 +42,7 @@ func ajaxHandler(w http.ResponseWriter, r *http.Request) {
 
 	debug(refine + " " + angle + " " + length + " " + points) // reverse order that they're passed into the program to accomidate large sets of points
 
-	out, _ := exec.Command("python3", SCRIPT_PATH, points, refine, angle, length).Output()
+	out, _ := exec.Command(PYTHON_PATH, SCRIPT_PATH, points, refine, angle, length).Output()
 	str_out := string(out)
 	fmt.Println(str_out)
 
@@ -58,7 +59,7 @@ func ajaxHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	if len(os.Args) < 2 || os.Args[1] == "-h" || os.Args[1] == "--help" || len(os.Args) < 3 {
-		fmt.Println("Usage: devserver.exe <port> <directory|\"prod\"> <optional:script path>")
+		fmt.Println("Usage: devserver.exe <port> <directory|\"prod\"> <optional:script path> <optional:python path>")
 		fmt.Println("If <directory> == \"prod\", will not serve files. Only the getTriangulation/ route")
 		return
 	}
@@ -67,6 +68,9 @@ func main() {
 	dir := os.Args[2]
 	if len(os.Args) > 3 {
 		SCRIPT_PATH = os.Args[3]
+	}
+	if len(os.Args) > 4 {
+		PYTHON_PATH = os.Args[4]
 	}
 
 	DEV_MODE = dir != "prod"
