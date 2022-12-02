@@ -47,16 +47,26 @@ func ajaxHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	if len(os.Args) < 2 || os.Args[1] == "-h" || os.Args[1] == "--help" || len(os.Args) < 3 {
-		fmt.Println("Usage: devserver.exe <port> <directory>")
+		fmt.Println("Usage: devserver.exe <port> <directory|\"prod\">")
+		fmt.Println("If <directory> == \"prod\", will not serve files. Only the getTriangulation/ route")
 		return
 	}
 
 	port := os.Args[1]
 	dir := os.Args[2]
 
-	http.Handle("/", http.FileServer(http.Dir(dir)))
+	dev_mode := dir != "prod"
+
+	if dev_mode {
+		// only serve files if not in production mode
+		http.Handle("/", http.FileServer(http.Dir(dir)))
+	}
 	http.HandleFunc("/getTriangulation", ajaxHandler)
 
-	fmt.Println("Serving files on port " + port + " from directory " + dir)
+	if dev_mode {
+		fmt.Println("DEV MODE: Serving files on port " + port + " from directory " + dir)
+	} else {
+		fmt.Println("PROD MODE: Listening for getTriangulation/ requests on port " + port)
+	}
 	log.Fatal(http.ListenAndServe(":"+port, nil))
 }

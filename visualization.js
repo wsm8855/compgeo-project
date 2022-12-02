@@ -20,7 +20,7 @@ function debug(msg) {
 
 // CONSTANTS
 // backend
-const BACKEND_ADDRESS = '' // will need to connect to backend in production
+const BACKEND_ADDRESS = 'http://67.205.189.195' // will need to connect to backend in production
 
 // input validation
 const INPUT_MIN_POINTS = 3
