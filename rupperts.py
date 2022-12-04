@@ -303,7 +303,7 @@ class Bookkeeper:
 if __name__ == "__main__":
     points_str = sys.argv[1]
     refine = int(sys.argv[2])
-    points_raw = [int(i) for i in points_str.split(",")]
+    points_raw = [float(i) for i in points_str.split(",")]
 
     points = [None] * (int(len(points_raw) / 2))
     delaunay = DelaunayTriangulation(WIDTH, HEIGHT)

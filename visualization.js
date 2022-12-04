@@ -50,9 +50,53 @@ const CANVAS_ELEMENT_ID = "canvas";
 const CANVAS_WIDTH = 500; //window.innerWidth * 0.8; 20%?
 const CANVAS_HEIGHT = CANVAS_WIDTH;
 
+const COLOR_BLACK = "#000000";
+const COLOR_GREEN = "#00FF00";
+const COLOR_RED = "#FF0000";
+const POINT_SIZE = 5;
+
+// event/steps
+const EVENT_ENCROACHED_UPON = "encroached_upon";
+const STEP_ENCROACHED_UPON_CHECK     = EVENT_ENCROACHED_UPON + "_check";
+const STEP_ENCROACHED_UPON_NEW       = EVENT_ENCROACHED_UPON + "_new";
+const STEP_ENCROACHED_UPON_REFRESH   = EVENT_ENCROACHED_UPON + "_refresh";
+
+// EVENT_ENCROACHED_UPON = "encroached_upon";
+
 function randint(min, max) {
     // min and max inclusive
     return Math.floor(Math.random() * (max - min + 1) + min);
+}
+
+function euclidian_between_points(p1, p2) {
+    debug("euclidian_between_points");
+    const d = Math.sqrt(Math.pow(p1.x - p2.x, 2) + Math.pow(p1.y - p2.y, 2));
+    return d;
+}
+
+function parse_steps_from_events(events) {
+    const steps = [];
+    events.forEach((event) => {
+        switch (event.type) {
+            case EVENT_ENCROACHED_UPON:
+                steps.push({
+                    type: STEP_ENCROACHED_UPON_CHECK,
+                    new_point: event.new_point,
+                    offending_point: event.offending_point,
+                    segment: event.segment
+                });
+                steps.push({
+                    type: STEP_ENCROACHED_UPON_NEW,
+                    new_point: event.new_point
+                });
+                steps.push({
+                    type: STEP_ENCROACHED_UPON_REFRESH,
+                    new_point: event.new_point
+                });
+                break;
+        }
+    });
+    return steps;
 }
 
 // data structures
@@ -75,6 +119,13 @@ class Triangle {
         this.v0 = p0;
         this.v1 = p1;
         this.v2 = p2;
+    }
+}
+
+class Circle {
+    constructor(center_point, radius_px) {
+        this.center = center_point;
+        this.radius = radius_px;
     }
 }
 
@@ -115,7 +166,11 @@ class Canvas {
         this.draw_edge(new Edge(new Point(275, 250), new Point(250, 275)));
     }
 
-    draw_circle(p, r, fill) {
+    draw_circle(p, r, fill, c=COLOR_BLACK) {
+        // debug("Canvas.draw_circle");
+        // debug({p, r, fill, c});
+        this.ctx.strokeStyle = c;
+        this.ctx.fillStyle = c;
         this.ctx.beginPath();
         this.ctx.arc(p.x, p.y, r, 0, 2*Math.PI);
         if (fill) {
@@ -125,34 +180,45 @@ class Canvas {
         }
     }
 
-    draw_edge(e) {
+    draw_circles(circles, fill, c=COLOR_BLACK) {
+        debug("Canvas.draw_circles");
+        // debug({circles, fill, c});
+        circles.forEach(cir => {
+            this.draw_circle(cir.center, cir.radius, fill, c);
+        });
+    }
+
+    draw_edge(e, c=COLOR_BLACK) {
+        this.ctx.strokeStyle = c;
         this.ctx.beginPath();
         this.ctx.moveTo(e.p0.x, e.p0.y);
         this.ctx.lineTo(e.pf.x, e.pf.y);
         this.ctx.stroke();
     }
 
-    draw_triangle(t) {
-        this.draw_edge(new Edge(t.v0, t.v1));
-        this.draw_edge(new Edge(t.v1, t.v2));
-        this.draw_edge(new Edge(t.v2, t.v0));
+    draw_triangle(t, c=COLOR_BLACK) {
+        this.draw_edge(new Edge(t.v0, t.v1), c);
+        this.draw_edge(new Edge(t.v1, t.v2), c);
+        this.draw_edge(new Edge(t.v2, t.v0), c);
     }
     
-    draw_points(points, r) {
+    draw_points(points, r, c=COLOR_BLACK) {
+        // debug("Canvas.draw_points");
+        // debug({points, r, c});
         points.forEach(p => {
-            this.draw_circle(p, r, true);
+            this.draw_circle(p, r, true, c);
         });
     }
     
-    draw_edges(edges) {
+    draw_edges(edges, c=COLOR_BLACK) {
         edges.forEach(e => {
-            this.draw_edge(e);
+            this.draw_edge(e, c);
         });
     }
 
-    draw_triangles(triangles) {
+    draw_triangles(triangles, c=COLOR_BLACK) {
         triangles.forEach(t => {
-            this.draw_triangle(t);
+            this.draw_triangle(t, c);
         });
     }
 
@@ -437,6 +503,13 @@ class UserInterface {
 
     event_step() {
         debug("UserInterface.event_step");
+        this.vis.step();
+        if (this.vis.refinement_complete) {
+            this.event_complete_refinement();
+            return;
+        }
+        this.canvas.clear();
+        this.draw_state();
     }
 
     event_complete_refinement() {
@@ -449,8 +522,21 @@ class UserInterface {
     }
 
     draw_state() {
-        this.canvas.draw_triangles(this.vis.triangles);
-        this.canvas.draw_points(this.vis.points, 5);
+
+        const edge_color = (this.vis.refinement_complete) ? COLOR_GREEN : COLOR_BLACK;
+
+        this.canvas.draw_triangles(this.vis.triangles, edge_color);
+        this.canvas.draw_points(this.vis.points, POINT_SIZE);
+        this.canvas.draw_points(this.vis.green_points, POINT_SIZE, COLOR_GREEN);
+        this.canvas.draw_points(this.vis.red_points, POINT_SIZE, COLOR_RED);
+        this.canvas.draw_circles(this.vis.green_circles, false, COLOR_GREEN); // circles
+        this.canvas.draw_circles(this.vis.red_circles, false, COLOR_RED); // circles
+
+        if (this.vis.refinement_computed) {
+            this.run_step_btn.innerHTML = "Step (" + (this.vis.total_steps - this.vis.steps.length) + "/" + this.vis.total_steps + ")";
+        } else {
+            this.run_step_btn.innerHTML = "Step (--/--)";
+        }
     }
 }
 
@@ -477,18 +563,35 @@ class Visualization {
         // display state
         this.points = [];
         this.triangles = [];
+        this.green_points = [];
+        this.red_points = [];
+        this.green_circles = [];
+        this.red_circles = [];
 
         // saved hidden state
         this.input_points = [];
         this.delaunay_points = [];
         this.delaunay_triangles = [];
+        this.step_points = [];
+        this.step_triangles = [];
         this.refined_points = [];
         this.refined_triangles = [];
+        this.events = [];
+        this.steps = [];
+        this.total_steps = 0;
 
         // setup state
         this.populated = false;
         this.triangulation_complete = false;
         this.refinement_complete = false;
+        this.refinement_computed = true;
+    }
+
+    reset_color_state() {
+        this.green_points = [];
+        this.red_points = [];
+        this.green_circles = [];
+        this.red_circles = [];
     }
 
     populate_random(num_points) {
@@ -525,13 +628,10 @@ class Visualization {
         this.in_manual_entry_mode = false;
     }
 
-    triangulate() {
-        // assumes populated
-        if (!this.triangulation_complete) {
-            this.input_points = [...this.points]; // save original points if re-triangulation is desired
-        }
-        var input_points = this.input_points.map(function(point) {
-            return [point['x'], point['y']];
+    _request_triangulation(request_points) {
+        
+        const input_points = request_points.map(function(point) {
+            return [point.x, point.y];
         });
         
         // request delaunay triangulation
@@ -547,12 +647,24 @@ class Visualization {
         const new_triangles = [];
         for (let i=0; i < triangles_to_add.length; i += 1) {
             const new_triangle = new Triangle(
-                this.input_points[triangles_to_add[i][0]],
-                this.input_points[triangles_to_add[i][1]],
-                this.input_points[triangles_to_add[i][2]]
+                request_points[triangles_to_add[i][0]],
+                request_points[triangles_to_add[i][1]],
+                request_points[triangles_to_add[i][2]]
             );
             new_triangles.push(new_triangle);
         }
+
+        return new_triangles;
+    }
+
+    triangulate() {
+        // assumes populated
+        if (!this.triangulation_complete) {
+            this.input_points = [...this.points]; // save original points if re-triangulation is desired
+        }
+
+        // request delaunay triangulation
+        const new_triangles = this._request_triangulation(this.input_points);
 
         // update saved state
         this.delaunay_points = [...this.input_points];
@@ -562,6 +674,8 @@ class Visualization {
         this.points = [...this.delaunay_points];
         this.triangles = [...this.delaunay_triangles];
         this.triangulation_complete = true;
+        this.refinement_complete = false;
+        this.refinement_computed = false;
     }
 
     compute_refinement(angle, length) {
@@ -579,6 +693,7 @@ class Visualization {
         const triangles_to_add = parsed_triangulation[0];
         const points_to_add = parsed_triangulation[1];
         const events =  parsed_response["events"];
+        // debug(events);
 
         // use delaunay to compute triangle
 
@@ -599,9 +714,51 @@ class Visualization {
             new_triangles.push(new_triangle);
         }
 
+        // parse steps
+        const new_steps = parse_steps_from_events(events);
+
         // update saved state
         this.refined_points = new_points;
         this.refined_triangles = new_triangles;
+        this.events = events;
+        this.refinement_computed = true;
+        this.refinement_complete = false;
+
+        // setup step process
+        this.step_points = [...new_points];
+        this.step_triangles = [...new_triangles];
+        this.steps = new_steps;
+        this.total_steps = this.steps.length;
+        // debug(this.steps);
+    }
+
+    step() {
+        // reset temp state
+        this.reset_color_state();
+
+        if (this.steps.length == 0) {
+            this.complete_refinement();
+            return;
+        }
+        let step = this.steps.shift();
+        // debug(this.refined_points);
+        switch(step.type) {
+            case STEP_ENCROACHED_UPON_CHECK:
+                this.green_points = [this.refined_points[step.segment[0]], this.refined_points[step.segment[1]]];
+                this.red_points = [this.refined_points[step.offending_point]];
+                this.green_circles = [
+                    new Circle(this.refined_points[step.new_point], euclidian_between_points(this.refined_points[step.segment[0]], this.refined_points[step.segment[1]]) / 2)
+                ];
+                break;
+            case STEP_ENCROACHED_UPON_NEW:
+                this.green_points = [this.refined_points[step.new_point]];
+                break;
+            case STEP_ENCROACHED_UPON_REFRESH:
+                this.green_points = [this.refined_points[step.new_point]];
+                this.points.push(this.refined_points[step.new_point]);
+                this.triangles = this._request_triangulation(this.points);
+                break;
+        }
     }
 
     complete_refinement() {
@@ -609,6 +766,7 @@ class Visualization {
         this.points = [...this.refined_points];
         this.triangles = [...this.refined_triangles];
         this.refinement_complete = true;
+        this.reset_color_state();
     }
 }
 
