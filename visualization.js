@@ -39,6 +39,7 @@ const CTRLS_REFINE_ANGLE_INPUT               = "refine_angle_input";
 const CTRLS_REFINE_LENGTH_INPUT              = "refine_length_input";
 const CTRLS_REFINE_BTN_ELEMENT               = "refine_btn";
 const CTRLS_STEP_ELEMENT_ID                  = "run_step_btn";
+const CTRLS_COMPLETE_REFINEMENT_BTN_ID       = "run_complete_refinement_btn";
 const CTRLS_SPEED_ELEMENT_ID                 = "run_speed_input";
 const CTRLS_PLAY_ELEMENT_ID                  = "run_play_btn";
 const CTRLS_PAUSE_ELEMENT_ID                 = "run_pause_btn";
@@ -187,21 +188,22 @@ class UserInterface {
     grab_elements() {
         debug("UserInterface.grab_elements");
 
-        this.setup_manual_btn       = document.getElementById(CTRLS_MANUAL_ENTRY_MODE_BTN_ELEMENT_ID);
-        this.setup_random_btn       = document.getElementById(CTRLS_RANDOM_MODE_BTN_ELEMENT_ID);
-        this.setup_random_input     = document.getElementById(CTRLS_RANDOM_INPUT_ELEMENT_ID);
-        this.setup_clear_btn        = document.getElementById(CTRLS_CLEAR_ELEMENT_ID);
+        this.setup_manual_btn            = document.getElementById(CTRLS_MANUAL_ENTRY_MODE_BTN_ELEMENT_ID);
+        this.setup_random_btn            = document.getElementById(CTRLS_RANDOM_MODE_BTN_ELEMENT_ID);
+        this.setup_random_input          = document.getElementById(CTRLS_RANDOM_INPUT_ELEMENT_ID);
+        this.setup_clear_btn             = document.getElementById(CTRLS_CLEAR_ELEMENT_ID);
 
-        this.triangulate_btn        = document.getElementById(CTRLS_TRIANGULATE_ELEMENT_ID);
+        this.triangulate_btn             = document.getElementById(CTRLS_TRIANGULATE_ELEMENT_ID);
 
-        this.run_refine_angle_input = document.getElementById(CTRLS_REFINE_ANGLE_INPUT);
-        this.run_refine_length_input  = document.getElementById(CTRLS_REFINE_LENGTH_INPUT);
-        this.run_refine_btn         = document.getElementById(CTRLS_REFINE_BTN_ELEMENT);
-        this.run_step_btn           = document.getElementById(CTRLS_STEP_ELEMENT_ID);
-        this.run_speed_input        = document.getElementById(CTRLS_SPEED_ELEMENT_ID);
-        this.run_play_btn           = document.getElementById(CTRLS_PLAY_ELEMENT_ID);
-        this.run_pause_btn          = document.getElementById(CTRLS_PAUSE_ELEMENT_ID);
-        this.run_reset_btn          = document.getElementById(CTRLS_RESTART_ELEMENT_ID);
+        this.run_refine_angle_input      = document.getElementById(CTRLS_REFINE_ANGLE_INPUT);
+        this.run_refine_length_input     = document.getElementById(CTRLS_REFINE_LENGTH_INPUT);
+        this.run_refine_btn              = document.getElementById(CTRLS_REFINE_BTN_ELEMENT);
+        this.run_step_btn                = document.getElementById(CTRLS_STEP_ELEMENT_ID);
+        this.run_speed_input             = document.getElementById(CTRLS_SPEED_ELEMENT_ID);
+        this.run_play_btn                = document.getElementById(CTRLS_PLAY_ELEMENT_ID);
+        this.run_pause_btn               = document.getElementById(CTRLS_PAUSE_ELEMENT_ID);
+        this.run_reset_btn               = document.getElementById(CTRLS_RESTART_ELEMENT_ID);
+        this.run_complete_refinement_btn = document.getElementById(CTRLS_COMPLETE_REFINEMENT_BTN_ID);
     }
 
     setup_event_handlers() {
@@ -221,12 +223,21 @@ class UserInterface {
 
         // triangulate button
         this.triangulate_btn.onclick = () => {this.event_triangulate()};
-
+        
+        // angle input field
         this.run_refine_angle_input.oninput = () => {this.event_angle_input()};
 
+        // threshold length field
         this.run_refine_length_input.oninput = () => {this.event_length_input()};
 
+        // compute refinement button
         this.run_refine_btn.onclick = () => {this.event_refine()};
+
+        // visualization step button
+        this.run_step_btn.onclick = () => {this.event_step()};
+        
+        // complete refinement button
+        this.run_complete_refinement_btn.onclick = () => {this.event_complete_refinement()};
     }
 
     // EVENT HANDLERS
@@ -415,11 +426,26 @@ class UserInterface {
         debug("UserInterface.event_refine");
         const angle_val = this.run_refine_angle_input.value;
         const length_val = this.run_refine_length_input.value;
-        this.vis.refine(angle_val, length_val);
+        this.vis.compute_refinement(angle_val, length_val);
         this.canvas.clear();
         this.draw_state();
         this.run_step_btn.disabled = false;
+        this.run_complete_refinement_btn.disabled = false; // TODO more sophistocated check for disabled
+        this.run_refine_btn.disabled = true;
 
+    }
+
+    event_step() {
+        debug("UserInterface.event_step");
+    }
+
+    event_complete_refinement() {
+        debug("UserInterface.event_complete_refinement");
+        this.vis.complete_refinement();
+        this.canvas.clear();
+        this.draw_state();
+        this.run_step_btn.disabled = true;
+        this.run_complete_refinement_btn.disabled = true; // TODO more sophistocated check for disabled
     }
 
     draw_state() {
@@ -538,7 +564,7 @@ class Visualization {
         this.triangulation_complete = true;
     }
 
-    refine(angle, length) {
+    compute_refinement(angle, length) {
         // assumes populated
         const input_points = this.delaunay_points.map(function(point) {
             return [point['x'], point['y']];
@@ -576,7 +602,9 @@ class Visualization {
         // update saved state
         this.refined_points = new_points;
         this.refined_triangles = new_triangles;
+    }
 
+    complete_refinement() {
         // update visualization state
         this.points = [...this.refined_points];
         this.triangles = [...this.refined_triangles];
