@@ -49,11 +49,16 @@ const CTRLS_RESTART_ELEMENT_ID               = "run_reset_btn";
 
 // code display
 const CODE_LINE_ID_PREFIX                    = "line_";
-const STYLE_CLASS_CODE_BOLD                  = "code_bold";
+const STYLE_CLASS_CODE_ACTIVE                  = "code_active";
 
 // code line meanings
 const CODE_NUM_LINES                         = 17; // expect elements with ids line_1 ... line_17 exist.
 const CODE_TRIANGULATE_LINE                  = 2;
+const CODE_ENCROACHED_UPON_CHECK_LINE        = 5;
+const CODE_ENCROACHED_UPON_NEW_LINE          = 6;
+const CODE_ENCROACHED_UPON_REFRESH_LINE      = 4;
+const CODE_REFINEMENT_COMPUTED_LINE          = 4;
+const CODE_REFINEMENT_COMPLETE_LINE          = 17;
 
 // canvas
 const CANVAS_ELEMENT_ID = "canvas";
@@ -323,13 +328,6 @@ class UserInterface {
         this.run_complete_refinement_btn.onclick = () => {this.event_complete_refinement()};
     }
 
-    clear_code() {
-        // clean code area
-        for (let line_num = 1; line_num < CODE_NUM_LINES + 1; line_num++) {
-            this.code_lines[line_num].classList.remove(STYLE_CLASS_CODE_BOLD);
-        }
-    }
-
     // EVENT HANDLERS
     manual_entry_mode() {
         // enter manual entry mode, whch dramatially changes behavior of UI
@@ -446,7 +444,6 @@ class UserInterface {
         this.vis.populate_random(num_points);
         this.vis.populated = true;
         this.triangulate_btn.disabled = this.vis.points.length < 3;
-        this.clear_code();
         this.canvas.clear();
         this.draw_state();
     }
@@ -455,8 +452,8 @@ class UserInterface {
         // clear button
         debug("UserInterface.event_clear");
         this.vis.reset_state();
-        this.clear_code();
         this.canvas.clear();
+        this.draw_state();
         this.triangulate_btn.disabled = true;
         this.run_refine_btn.disabled = true;
         this.run_step_btn.disabled = true;
@@ -465,7 +462,6 @@ class UserInterface {
     event_triangulate() {
         debug("UserInterface.event_triangulate");
         this.vis.triangulate();
-        this.code_lines[CODE_TRIANGULATE_LINE].classList.add(STYLE_CLASS_CODE_BOLD);
         this.canvas.clear();
         this.draw_state();
         if (this._angle_input_valid() && this._length_input_valid()) {
@@ -552,6 +548,25 @@ class UserInterface {
         this.run_complete_refinement_btn.disabled = true; // TODO more sophistocated check for disabled
     }
 
+    clear_code() {
+        // clean code area
+        for (let line_num = 1; line_num < CODE_NUM_LINES + 1; line_num++) {
+            this.code_lines[line_num].classList.remove(STYLE_CLASS_CODE_ACTIVE);
+        }
+    }
+
+    set_line_of_code_active(line_number_to_set_active) {
+        // input of 0 make no lines bold
+        // set appropriate appearance via adding/removing css class
+        for (let line_num = 1; line_num < CODE_NUM_LINES + 1; line_num++) {
+            if (line_num == line_number_to_set_active) {
+                this.code_lines[line_num].classList.add(STYLE_CLASS_CODE_ACTIVE);
+            } else {
+                this.code_lines[line_num].classList.remove(STYLE_CLASS_CODE_ACTIVE);
+            }
+        }
+    }
+
     draw_state() {
 
         const edge_color = (this.vis.refinement_complete) ? COLOR_GREEN : COLOR_BLACK;
@@ -568,6 +583,8 @@ class UserInterface {
         } else {
             this.run_step_btn.innerHTML = "Step (--/--)";
         }
+
+        this.set_line_of_code_active(this.vis.code_line_active);
     }
 }
 
@@ -610,6 +627,7 @@ class Visualization {
         this.events = [];
         this.steps = [];
         this.total_steps = 0;
+        this.code_line_active = 0;
 
         // setup state
         this.populated = false;
@@ -707,6 +725,7 @@ class Visualization {
         this.triangulation_complete = true;
         this.refinement_complete = false;
         this.refinement_computed = false;
+        this.code_line_active = CODE_TRIANGULATE_LINE;
     }
 
     compute_refinement(angle, length) {
@@ -754,6 +773,7 @@ class Visualization {
         this.events = events;
         this.refinement_computed = true;
         this.refinement_complete = false;
+        this.code_line_active = CODE_REFINEMENT_COMPUTED_LINE;
 
         // setup step process
         this.step_points = [...new_points];
@@ -775,6 +795,7 @@ class Visualization {
         // debug(this.refined_points);
         switch(step.type) {
             case STEP_ENCROACHED_UPON_CHECK:
+                this.code_line_active = CODE_ENCROACHED_UPON_CHECK_LINE;
                 this.green_points = [this.refined_points[step.segment[0]], this.refined_points[step.segment[1]]];
                 this.red_points = [this.refined_points[step.offending_point]];
                 this.green_circles = [
@@ -782,9 +803,11 @@ class Visualization {
                 ];
                 break;
             case STEP_ENCROACHED_UPON_NEW:
+                this.code_line_active = CODE_ENCROACHED_UPON_NEW_LINE;
                 this.green_points = [this.refined_points[step.new_point]];
                 break;
             case STEP_ENCROACHED_UPON_REFRESH:
+                this.code_line_active = CODE_ENCROACHED_UPON_REFRESH_LINE;
                 this.green_points = [this.refined_points[step.new_point]];
                 this.points.push(this.refined_points[step.new_point]);
                 this.triangles = this._request_triangulation(this.points);
@@ -797,6 +820,7 @@ class Visualization {
         this.points = [...this.refined_points];
         this.triangles = [...this.refined_triangles];
         this.refinement_complete = true;
+        this.code_line_active = CODE_REFINEMENT_COMPLETE_LINE;
         this.reset_color_state();
     }
 }
