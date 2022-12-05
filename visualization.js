@@ -22,11 +22,11 @@ function debug(msg) {
 // controls
 // CONSTANTS
 // backend
-const BACKEND_ADDRESS = ''
+const BACKEND_ADDRESS  = ''
 
 // input validation
 const INPUT_MIN_POINTS = 3
-const INPUT_MIN_ANGLE = 21.0
+const INPUT_MIN_ANGLE  = 21.0
 const INPUT_MIN_LENGTH = 1
 
 // UI
@@ -49,7 +49,7 @@ const CTRLS_RESTART_ELEMENT_ID               = "run_reset_btn";
 
 // code display
 const CODE_LINE_ID_PREFIX                    = "line_";
-const STYLE_CLASS_CODE_ACTIVE                  = "code_active";
+const STYLE_CLASS_CODE_ACTIVE                = "code_active";
 
 // code line meanings
 const CODE_NUM_LINES                         = 17; // expect elements with ids line_1 ... line_17 exist.
@@ -62,21 +62,19 @@ const CODE_REFINEMENT_COMPLETE_LINE          = 17;
 
 // canvas
 const CANVAS_ELEMENT_ID = "canvas";
-const CANVAS_WIDTH = 500; //window.innerWidth * 0.8; 20%?
-const CANVAS_HEIGHT = CANVAS_WIDTH;
+const CANVAS_WIDTH      = 500; //window.innerWidth * 0.8; 20%?
+const CANVAS_HEIGHT     = CANVAS_WIDTH;
 
-const COLOR_BLACK = "#000000";
-const COLOR_GREEN = "#00FF00";
-const COLOR_RED = "#FF0000";
-const POINT_SIZE = 5;
+const COLOR_BLACK       = "#000000";
+const COLOR_GREEN       = "#00FF00";
+const COLOR_RED         = "#FF0000";
+const POINT_SIZE        = 5;
 
 // event/steps
-const EVENT_ENCROACHED_UPON = "encroached_upon";
+const EVENT_ENCROACHED_UPON          = "encroached_upon";
 const STEP_ENCROACHED_UPON_CHECK     = EVENT_ENCROACHED_UPON + "_check";
 const STEP_ENCROACHED_UPON_NEW       = EVENT_ENCROACHED_UPON + "_new";
 const STEP_ENCROACHED_UPON_REFRESH   = EVENT_ENCROACHED_UPON + "_refresh";
-
-// EVENT_ENCROACHED_UPON = "encroached_upon";
 
 function randint(min, max) {
     // min and max inclusive
