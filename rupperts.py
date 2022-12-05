@@ -1,9 +1,23 @@
+""" 
+Ruppert's Algorithm Pedagogical Aid
+Abigail Buckta and Wiley Matthews
+CSCI-716 Computational Geometry Project
+Fall 2022
+
+Implements Ruppert's algorithm and performs bookkeeping for visualization.
+"""
+
+# native
 import sys
-import numpy as np
 import math
+import json
+
+# 3rd party
+import numpy as np
 
 WIDTH = 1000
 HEIGHT = 1000
+POINT_PRESISION = 4
 
 
 class Point:
@@ -30,6 +44,17 @@ class Point:
 
     def equals(self, other):
         return self.x == other.x and self.y == other.y
+
+    def str_loc(self, precision=None):
+        x = self.x
+        y = self.y
+        if precision is not None:
+            x = round(x, precision)
+            y = round(y, precision)
+        return "[" + str(x) + ", "  + str(y) +"]"
+    
+    def json_friendly(self):
+        return self.name
 
 
 class Segment:
@@ -61,6 +86,9 @@ class Segment:
 
     def get_midpoint(self):
         return [(self.start.x + self.end.x) / 2, (self.start.y + self.end.y) / 2]
+    
+    def json_friendly(self):
+        return [self.start.name, self.end.name]
 
 
 class Triangle:
@@ -79,22 +107,69 @@ class Triangle:
             return True
         return False
 
+    def get_angle(self, a, b, c):
+        ang = math.degrees(math.atan2(c.y-b.y, c.x-b.x) - math.atan2(a.y-b.y, a.x-b.x))
+        return ang + 180 if ang < 0 else ang
+
+    def is_skinny(self, threshold_angle, threshold_length):
+        too_small = True
+        for edge in self.edges:
+            if edge.length() > threshold_length:
+                too_small = False
+        if too_small:
+            return False
+
+        a = self.vertices[0]
+        b = self.vertices[1]
+        c = self.vertices[2]
+
+        if self.get_angle(a, b, c)< threshold_angle:
+            return True
+        if self.get_angle(b, a, c) < threshold_angle:
+            return True
+        if self.get_angle(c, a, b) < threshold_angle:
+            return True
+        return False
+
+    def get_circumcenter(self):
+        a = self.vertices[0]
+        b = self.vertices[1]
+        c = self.vertices[2]
+        d = 2 * (a.x * (b.y - c.y) + b.x * (c.y - a.y) + c.x * (a.y - b.y))
+        ux = ((a.x * a.x + a.y * a.y) * (b.y - c.y) + (b.x * b.x + b.y * b.y) * (c.y - a.y) + (c.x * c.x + c.y * c.y) * (a.y - b.y)) / d
+        uy = ((a.x * a.x + a.y * a.y) * (c.x - b.x) + (b.x * b.x + b.y * b.y) * (a.x - c.x) + (c.x * c.x + c.y * c.y) * (b.x - a.x)) / d
+        return (ux, uy)
+
     def __repr__(self):
         return str(self.vertices)
+    
+    def json_friendly(self):
+        return [v.json_friendly() for v in self.vertices]
 
 
 class DelaunayTriangulation:
     def __init__(self, WIDTH, HEIGHT):
         self.triangulation = []
+        self.new_points = []
+        self.all_points = []
         self.SuperPointA = Point(-100, -100, -1)
         self.SuperPointB = Point(2 * WIDTH + 100, -100, -1)
         self.SuperPointC = Point(-100, 2 * HEIGHT + 100, -1)
+        self.threshold_angle = 0
+        self.threshold_length = 0
+        self.next_point_name = 0
 
         superTriangle = Triangle(self.SuperPointA, self.SuperPointB, self.SuperPointC)
 
         self.triangulation.append(superTriangle)
 
-    def add_point(self, point):
+        self.bookkeeper = Bookkeeper() # bookkeeping for visualiztion
+
+    def add_point(self, point, new = False):
+        self.next_point_name += 1
+        if new == True:
+            self.new_points.append(point)
+        self.all_points.append(point)
         bad_triangles = []
         for triangle in self.triangulation:
             if point.InCircum(triangle):
@@ -125,13 +200,110 @@ class DelaunayTriangulation:
             if onSuper(triangle_new):
                 self.triangulation.remove(triangle_new)
 
-    def __repr__(self):
-        return "[" + str(self.triangulation) + ",[]]"
+    def get_skinny(self):
+        for triangle in self.triangulation:
+            #make sure it's not the super triangle
+            if(not triangle.has_vertex(self.SuperPointA) and not triangle.has_vertex(self.SuperPointB) and not triangle.has_vertex(self.SuperPointC)):
+                if triangle.is_skinny(self.threshold_angle, self.threshold_length):
+                    return triangle
+        else:
+            return None
 
+    def find_and_split_segments(self):
+        for triangle in self.triangulation:
+            if (not triangle.has_vertex(self.SuperPointA) and not triangle.has_vertex(
+                    self.SuperPointB) and not triangle.has_vertex(self.SuperPointC)):
+                for segment in triangle.edges:
+                    # self.bookkeeper.check_segment_encroaching(segment) # happens thousands of times
+                    if segment.length() > self.threshold_length:
+                        for point in self.all_points:
+                            if(segment.encroached_upon(point)):
+                                x, y = segment.get_midpoint()
+                                p = Point(x, y, self.next_point_name)
+                                delaunay.add_point(p, new=True)
+                                self.bookkeeper.encroached_upon(segment, point, p)
+                                return True
+        return False
+
+    def refine(self):
+        encroached_segs = True
+        while(encroached_segs):
+            encroached_segs = self.find_and_split_segments()
+        skinny = self.get_skinny()
+        if skinny is not None:
+            x,y = skinny.get_circumcenter()
+            p = Point(x, y, self.next_point_name)
+            segments = []
+            for triangle in self.triangulation:
+                if (not triangle.has_vertex(self.SuperPointA) and not triangle.has_vertex(
+                        self.SuperPointB) and not triangle.has_vertex(self.SuperPointC)):
+                    for segment in triangle.edges:
+                        if not segment.length() < self.threshold_length:
+                            if(segment.encroached_upon(p)):
+                                segments.append((segment, p))
+            if len(segments)>0:
+                for segment, point in segments:
+                    x, y = segment.get_midpoint()
+                    p = Point(x, y, self.next_point_name)
+                    delaunay.add_point(p, new=True)
+                    # self.bookkeeper.encroached_upon(segment, point, p)
+            else:
+                delaunay.add_point(p, new=True)
+                self.bookkeeper.fix_skinny(skinny, p)
+
+
+    def ruppert(self, threshold_angle, threshold_length):
+        self.threshold_angle = threshold_angle
+        self.threshold_length = threshold_length
+        while(self.get_skinny() is not None):
+            self.refine()
+
+    def __repr__(self):
+        new_points_str = "["
+        if(len(self.new_points)>0):
+            for point in self.new_points:
+                new_points_str+= point.str_loc(precision=POINT_PRESISION) +", "
+            new_points_str = new_points_str[:len(new_points_str)-2]
+        new_points_str +="]"
+        return "[" + str(self.triangulation) + ", " +new_points_str+ "]"
+    
+    def to_json(self, **json_kwargs):
+        response_json = json.dumps({
+            "triangulation": repr(self),
+            "events": self.bookkeeper.events
+        }, **json_kwargs)
+        return response_json
+
+class Bookkeeper:
+
+    def __init__(self):
+        self.events = []
+
+    def check_segment_encroaching(self, segment):
+        self.events.append({
+            "type": "check_segment_encroaching",
+            "segment": segment.json_friendly()
+        })
+
+    def encroached_upon(self, offending_segment, offending_point, new_point):
+        self.events.append({
+            "type": "encroached_upon",
+            "segment": offending_segment.json_friendly(),
+            "offending_point": offending_point.json_friendly(),
+            "new_point": new_point.json_friendly()
+        })
+
+    def fix_skinny(self, skinny_triangle, circumcenter_point):
+        self.events.append({
+            "type": "fix_skinny",
+            "triangle": skinny_triangle.json_friendly(),
+            "point": circumcenter_point.json_friendly()
+        })
 
 if __name__ == "__main__":
     points_str = sys.argv[1]
-    points_raw = [int(i) for i in points_str.split(",")]
+    refine = int(sys.argv[2])
+    points_raw = [float(i) for i in points_str.split(",")]
 
     points = [None] * (int(len(points_raw) / 2))
     delaunay = DelaunayTriangulation(WIDTH, HEIGHT)
@@ -144,8 +316,12 @@ if __name__ == "__main__":
         index += 2
         name += 1
 
+    if refine:
+        # triangulate with refinement
+        angle = float(sys.argv[3])
+        length = float(sys.argv[4])
+        delaunay.ruppert(angle, length)
+    
     delaunay.remove_super()
+    print(delaunay.to_json(separators=(',', ':')))
 
-    print(delaunay)
-
-    # print([[[1, 0, 3], [2, 1, 3], [4, 1, 0]], [[244, 125], [156, 300]]])
