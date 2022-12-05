@@ -145,7 +145,7 @@ func main() {
 	if DEBUG {
 		fmt.Println("DEBUG MODE: Serving files on port " + port + " from directory " + dir)
 	} else {
-		fmt.Println("PROD MODE: Serving files on port " + port + " from directory " + port)
+		fmt.Println("PROD MODE: Serving files on port " + port + " from directory " + dir)
 	}
 	fmt.Println("PYTHON_PATH=\"" + PYTHON_PATH + "\"")
 	fmt.Println("SCRIPT_PATH=\"" + SCRIPT_PATH + "\"")
