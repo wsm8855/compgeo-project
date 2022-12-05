@@ -107,7 +107,7 @@ func ajaxHandler(w http.ResponseWriter, r *http.Request) {
 
 	out, _ := exec.Command(PYTHON_PATH, SCRIPT_PATH, points, refine, angle, length).Output()
 	str_out := string(out)
-	fmt.Println(str_out)
+	debug(str_out)
 
 	// create json response from struct
 	a, err := json.Marshal(str_out)
@@ -122,7 +122,7 @@ func ajaxHandler(w http.ResponseWriter, r *http.Request) {
 
 func main() {
 	if len(os.Args) < 2 || os.Args[1] == "-h" || os.Args[1] == "--help" || len(os.Args) < 3 {
-		fmt.Println("Usage: devserver.exe <port> <directory|\"prod\"> <optional:script path> <optional:python path>")
+		fmt.Println("Usage: devserver.exe <port> <directory> <debug> <optional:script path> <optional:python path>")
 		fmt.Println("If <directory> == \"prod\", will not serve files. Only the getTriangulation/ route")
 		return
 	}
@@ -130,24 +130,22 @@ func main() {
 	port := os.Args[1]
 	dir := os.Args[2]
 	if len(os.Args) > 3 {
-		SCRIPT_PATH = os.Args[3]
+		DEBUG = os.Args[3] == "true"
 	}
 	if len(os.Args) > 4 {
-		PYTHON_PATH = os.Args[4]
+		SCRIPT_PATH = os.Args[4]
+	}
+	if len(os.Args) > 5 {
+		PYTHON_PATH = os.Args[6]
 	}
 
-	DEV_MODE = dir != "prod"
-
-	if DEV_MODE {
-		// only serve files if not in production mode
-		http.Handle("/", http.FileServer(http.Dir(dir)))
-	}
+	http.Handle("/", http.FileServer(http.Dir(dir)))
 	http.HandleFunc("/getTriangulation", ajaxHandler)
 
-	if DEV_MODE {
-		fmt.Println("DEV MODE: Serving files on port " + port + " from directory " + dir)
+	if DEBUG {
+		fmt.Println("DEBUG MODE: Serving files on port " + port + " from directory " + dir)
 	} else {
-		fmt.Println("PROD MODE: Listening for getTriangulation/ requests on port " + port)
+		fmt.Println("PROD MODE: Serving files on port " + port + " from directory " + port)
 	}
 	fmt.Println("PYTHON_PATH=\"" + PYTHON_PATH + "\"")
 	fmt.Println("SCRIPT_PATH=\"" + SCRIPT_PATH + "\"")
