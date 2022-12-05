@@ -55,7 +55,6 @@ const STYLE_CLASS_CODE_BOLD                  = "code_bold";
 const CODE_NUM_LINES                         = 17; // expect elements with ids line_1 ... line_17 exist.
 const CODE_TRIANGULATE_LINE                  = 2;
 
-// canvas constants
 // canvas
 const CANVAS_ELEMENT_ID = "canvas";
 const CANVAS_WIDTH = 500; //window.innerWidth * 0.8; 20%?
@@ -272,18 +271,6 @@ class UserInterface {
 
         this.triangulate_btn             = document.getElementById(CTRLS_TRIANGULATE_ELEMENT_ID);
 
-        this.run_step_btn       = document.getElementById(CTRLS_STEP_ELEMENT_ID);
-        this.run_speed_input    = document.getElementById(CTRLS_SPEED_ELEMENT_ID);
-        this.run_play_btn       = document.getElementById(CTRLS_PLAY_ELEMENT_ID);
-        this.run_pause_btn      = document.getElementById(CTRLS_PAUSE_ELEMENT_ID);
-        this.run_reset_btn      = document.getElementById(CTRLS_RESTART_ELEMENT_ID);
-
-        // grab code lines
-        this.code_lines = [null]; // first element "line 0" is empty to allow for semantic indexing
-        for (let line_num = 1; line_num < CODE_NUM_LINES + 1; line_num++) {
-            let line_span_element = document.getElementById(CODE_LINE_ID_PREFIX + line_num);
-            this.code_lines.push(line_span_element);
-        }
         this.run_refine_angle_input      = document.getElementById(CTRLS_REFINE_ANGLE_INPUT);
         this.run_refine_length_input     = document.getElementById(CTRLS_REFINE_LENGTH_INPUT);
         this.run_refine_btn              = document.getElementById(CTRLS_REFINE_BTN_ELEMENT);
@@ -293,6 +280,13 @@ class UserInterface {
         this.run_pause_btn               = document.getElementById(CTRLS_PAUSE_ELEMENT_ID);
         this.run_reset_btn               = document.getElementById(CTRLS_RESTART_ELEMENT_ID);
         this.run_complete_refinement_btn = document.getElementById(CTRLS_COMPLETE_REFINEMENT_BTN_ID);
+
+        // grab code lines
+        this.code_lines = [null]; // first element "line 0" is empty to allow for semantic indexing
+        for (let line_num = 1; line_num < CODE_NUM_LINES + 1; line_num++) {
+            let line_span_element = document.getElementById(CODE_LINE_ID_PREFIX + line_num);
+            this.code_lines.push(line_span_element);
+        }
     }
 
     setup_event_handlers() {
