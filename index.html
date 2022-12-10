@@ -24,15 +24,30 @@
 
         <!--Contents-->
         <h2>Introduction</h2>
-        <p>In this project we will create an interactive pedagogical aid for Ruppert's algorithm.</p>
+        <p>In this project we create an interactive pedagogical aid for Ruppert's algorithm.</p>
 
 
         <h2>Description</h2>
-        <p>Ruppert's algorithm is a way to refine Delaunay's triangles. It is able to minimize the amount of triangles in a rendering by eliminating triangles where the circumradius to shortest edge ratio is larger than a predetermined threshold. We will create a 2D visual aid implementing this algorithm.</p>
+        <p>Ruppert's algorithm is a Delauney Refinement algorithm. Delauney Refinement algorithms are a class of algorithms which refine a Delauney
+            Triangulation to make the triangles meet some set of criteria necessary for particular use cases. In Ruppert's algorithm's case, it eliminates
+            triangles in a mesh whose circumradius to shortest edge ratio is larger than a predetermined threshold. Such triangles are called <strong>poor quality tirangles</strong>.
+            It is useful to have a mesh composed of only <strong>quality triangles</strong> in some use cases such as fluid dynamimical simulations, where poor quality triangles
+            will produce inaccurate results.<br>
+            We create a 2D visual aid which shows Ruppert's algorithm refining a user-entered mesh, which can be found on the <a href="rupperts.html">Implementation Page</a>.</p>
+
+        <h2>Video Content</h2>
+        <ul>
+            <li><a href="https://www.youtube.com/watch?v=bUe_ZG5Bqiw">Slide Presentation Video</a></li>
+            <li><a href="https://www.youtube.com/watch?v=pchit7gTP5o">Demo Video</a></li>
+        </ul>
         
         <h2>References</h2>
-        <a href="https://en.wikipedia.org/wiki/Delaunay_triangulation">Delaunay Triangulation</a><br>
-        <a href="https://en.wikipedia.org/wiki/Delaunay_refinement">Ruppert's Algorithm</a>
+        <ul>
+            <li><a href="https://en.wikipedia.org/wiki/Delaunay_triangulation">Delaunay Triangulation</a></li>
+            <li><a href="https://en.wikipedia.org/wiki/Delaunay_refinement">Ruppert's Algorithm</a></li>
+            <li><a href="https://www.cs.cmu.edu/~quake/tripaper/triangle3.html">How it Works: Carnagie Mellon University</a></li>
+            <li><a href="https://people.eecs.berkeley.edu/~jrs/papers/2dj.pdf">How it Works:  Berkeley</a></li>
+        </ul>
 
         <h2>Team Duties</h2>
         <ul>
