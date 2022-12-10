@@ -7,7 +7,7 @@
         
         <style>
             body {
-                width: 80%;
+                width: 95%;
                 margin: auto;
             }
 
@@ -35,12 +35,20 @@
 
             .code_section {
                 display: inline-block;
-                vertical-align: top;
-                text-align: left;
                 max-width: 45%;
+            }
+
+            .code_area {
+                text-align: left;
+                vertical-align: top;
+                /* max-width: 45%; */
                 font-family: 'Courier New', Courier, monospace;
                 background-color: gainsboro;
                 padding: 10px;
+            }
+
+            .instruction_area {
+                text-align: left;
             }
             
             
@@ -63,25 +71,27 @@
         </div>
         <div class="center_container">
             <div class="code_section">
-                <span id="line_1" >function Ruppert(points, segments, threshold){</span><br>
-                <span id="line_2" >T := DelaunayTriangulation(points)</span><br>
-                <span id="line_3" >Q := the set of encroached segments and poor quality triangles</span><br>
-                <br>
-                <span id="line_4" >while Q is not empty:&emsp;&emsp;// The main loop</span><br>
-                <span id="line_5" >&emsp;if Q contains a segment s:</span><br>
-                <span id="line_6" >&emsp;&emsp;insert the midpoint of s into T</span><br>
-                <span id="line_7" >&emsp;else Q contains poor quality triangle t:</span><br>
-                <span id="line_8" >&emsp;&emsp;if the circumcenter of t encroaches a segment s:</span><br>
-                <span id="line_9" >&emsp;&emsp;&emsp;add s to Q;</span><br>
-                <span id="line_10">&emsp;&emsp;else:<br>
-                <span id="line_11">&emsp;&emsp;&emsp;insert the circumcenter of t into T</span><br>
-                <span id="line_12">&emsp;&emsp;end if</span><br>
-                <span id="line_13">&emsp;end if</span><br>
-                <span id="line_14">&emsp;update Q</span><br>
-                <span id="line_15">end while</span><br>
-                <br>
-                <span id="line_16">return T</span><br>
-                <span id="line_17">}//end Ruppert.</span><br>
+                <div class="code_area">
+                    <span id="line_1" >function Ruppert(points, segments, threshold){</span><br>
+                    <span id="line_2" >T := DelaunayTriangulation(points)</span><br>
+                    <span id="line_3" >Q := the set of encroached segments and poor quality triangles</span><br>
+                    <br>
+                    <span id="line_4" >while Q is not empty:&emsp;&emsp;// The main loop</span><br>
+                    <span id="line_5" >&emsp;if Q contains a segment s:</span><br>
+                    <span id="line_6" >&emsp;&emsp;insert the midpoint of s into T</span><br>
+                    <span id="line_7" >&emsp;else Q contains poor quality triangle t:</span><br>
+                    <span id="line_8" >&emsp;&emsp;if the circumcenter of t encroaches a segment s:</span><br>
+                    <span id="line_9" >&emsp;&emsp;&emsp;add s to Q;</span><br>
+                    <span id="line_10">&emsp;&emsp;else:<br>
+                    <span id="line_11">&emsp;&emsp;&emsp;insert the circumcenter of t into T</span><br>
+                    <span id="line_12">&emsp;&emsp;end if</span><br>
+                    <span id="line_13">&emsp;end if</span><br>
+                    <span id="line_14">&emsp;update Q</span><br>
+                    <span id="line_15">end while</span><br>
+                    <br>
+                    <span id="line_16">return T</span><br>
+                    <span id="line_17">}//end Ruppert.</span><br>
+                </div>
             </div>
             <div class="vis_section">
             <canvas id="canvas" width="500px" height="500px" class="border"></canvas>
@@ -113,6 +123,34 @@
                 </div>
             </div>
             </div>
+        </div>
+        <div class="instruction_area">
+            <h3>Instructions for Use</h3>
+            <ul>
+                <li><strong>Step 1: Setup</strong></li>
+                <ul>
+                    <li>Use either the <strong>Manual Entry Mode</strong> or <strong>Generate</strong> buttons to populate the canvas with points.</li>
+                    <li>Once <strong>Manual Entry Mode</strong> is started via the button, you can click on the canvas to add points. The click
+                    the button again to confirm your entry.</li>
+                    <li>You may also clear the canvas of points using the <strong>Clear</strong> button.</li>
+                </ul>
+                <li><strong>Step 2: Triangulate</strong></li>
+                <ul>
+                    <li>Use the <strong>Triangulate</strong> button to perform the initial Delauney Triangulation of the points.
+                        Upon doing this, you will see the pseudocode viewer come alive.</li>
+                </ul>
+                <li><strong>Step 3: Refine</strong></li>
+                <ul>
+                    <li>Customize the <strong>Min angle</strong> and <strong>Thresh length</strong> parameters for the algorithm as desired.</li>
+                    <li>Use the <strong>Refine</strong> button to compute the refinement (this can take a few seconds for over 40 points)</li>
+                    <li>Use the <strong>Step</strong> button to step through the algorithm.</li>
+                    <ul>
+                        <li>Notice that the number of steps completed and steps left to completion is displayed on the button.</li>
+                        <li>Also notice that the pseudocode viewer will display the step's place in the algorithm</li>
+                    </ul>
+                    <li>Use the <strong>Show Refinement</strong> button to see the finished refinement (this can be clicked at any point, even after stepping)</li>
+                </ul>
+            </ul>
         </div>
         <!--Implementation script-->
         <script src="visualization.js" type='module'></script>

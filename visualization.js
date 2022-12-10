@@ -70,6 +70,9 @@ const COLOR_GREEN       = "#00FF00";
 const COLOR_RED         = "#FF0000";
 const POINT_SIZE        = 5;
 
+const GREETING_FONT = "16px sans-serif";
+const GREETING_TEXT = "SCROLL DOWN TO SEE USAGE INSTRUCTIONS";
+
 // event/steps
 const EVENT_ENCROACHED_UPON          = "encroached_upon";
 const STEP_ENCROACHED_UPON_CHECK     = EVENT_ENCROACHED_UPON + "_check";
@@ -177,6 +180,12 @@ class Canvas {
         // nose
         this.draw_edge(new Edge(new Point(250, 225), new Point(275, 250)));
         this.draw_edge(new Edge(new Point(275, 250), new Point(250, 275)));
+    }
+
+    draw_ready() {
+        this.ctx.font = GREETING_FONT;
+        const text_props = this.ctx.measureText(GREETING_TEXT);
+        this.ctx.fillText(GREETING_TEXT, (CANVAS_WIDTH / 2) - (text_props.width / 2), CANVAS_HEIGHT / 2);
     }
 
     draw_circle(p, r, fill, c=COLOR_BLACK) {
@@ -836,7 +845,8 @@ let app = null;
 function init() {
     // Setup canvas
     const canvas = new Canvas(CANVAS_ELEMENT_ID);
-    canvas.draw_smiley(); // :)
+    // canvas.draw_smiley(); // :)
+    canvas.draw_ready();
 
     // Setup core visualization state/model
     const vis = new Visualization(GRID_DIMS);
