@@ -136,7 +136,7 @@ func main() {
 		SCRIPT_PATH = os.Args[4]
 	}
 	if len(os.Args) > 5 {
-		PYTHON_PATH = os.Args[6]
+		PYTHON_PATH = os.Args[5]
 	}
 
 	http.Handle("/", http.FileServer(http.Dir(dir)))
